@@ -57,6 +57,11 @@ export function availableActions(trade, userId, now = new Date()) {
   });
 }
 
+/** The status to fall back to when a release/refund never landed on-chain. */
+export function statusBeforeTransition(trade) {
+  return trade.paidAt ? 'PAID' : 'ESCROW_LOCKED';
+}
+
 export function isPaymentOverdue(trade, now = new Date()) {
   return trade.status === 'ESCROW_LOCKED' && isPast(trade.paymentDeadline, now);
 }

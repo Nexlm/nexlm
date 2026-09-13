@@ -5,6 +5,7 @@ import {
   isPaymentOverdue,
   resolveParties,
   roleOf,
+  statusBeforeTransition,
 } from '../src/services/tradeRules.js';
 
 const now = new Date('2026-09-01T12:00:00Z');
@@ -75,6 +76,13 @@ describe('availableActions', () => {
     expect(availableActions(trade(), 'buyer', now)).toEqual(['MARK_PAID', 'CANCEL']);
     expect(availableActions(trade(), 'seller', now)).toEqual(['RELEASE']);
     expect(availableActions(trade({ status: 'PAID' }), 'buyer', now)).toEqual([]);
+  });
+});
+
+describe('statusBeforeTransition', () => {
+  it('restores PAID only when the buyer had marked payment', () => {
+    expect(statusBeforeTransition(trade({ status: 'RELEASING', paidAt: now }))).toBe('PAID');
+    expect(statusBeforeTransition(trade({ status: 'REFUNDING', paidAt: null }))).toBe('ESCROW_LOCKED');
   });
 });
 
