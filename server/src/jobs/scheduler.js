@@ -1,10 +1,12 @@
 import { logger } from '../lib/logger.js';
 import { autoCancelTrades } from './autoCancelTrades.js';
 import { expireOrders } from './expireOrders.js';
+import { reconcileTrades } from './reconcileTrades.js';
 
 const JOBS = [
   { name: 'expire-orders', intervalMs: 30_000, run: expireOrders },
   { name: 'auto-cancel-trades', intervalMs: 15_000, run: autoCancelTrades },
+  { name: 'reconcile-trades', intervalMs: 60_000, run: reconcileTrades },
 ];
 
 /** Runs each job on an interval, never letting two runs of the same job overlap. */
