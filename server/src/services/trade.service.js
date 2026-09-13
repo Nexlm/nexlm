@@ -9,10 +9,24 @@ import { decryptSecret } from '../lib/secrets.js';
 import { publicUserSelect } from '../lib/selects.js';
 import { addMinutes, isPast, secondsUntil } from '../lib/time.js';
 import { broadcast, emitToTrade, emitToUser } from '../socket/io.js';
-import { explorerTxUrl } from '../stellar/client.js';
-import { createEscrowKeypair, lockEscrow, refundEscrow, releaseEscrow } from '../stellar/escrow.js';
+import { accountExists, explorerTxUrl } from '../stellar/client.js';
+import {
+  createEscrowKeypair,
+  ESCROW_MEMOS,
+  findEscrowTransactions,
+  lockEscrow,
+  refundEscrow,
+  releaseEscrow,
+} from '../stellar/escrow.js';
 import { getXlmBalance } from '../stellar/wallet.js';
-import { assertCanAct, availableActions, isPaymentOverdue, resolveParties, roleOf } from './tradeRules.js';
+import {
+  assertCanAct,
+  availableActions,
+  isPaymentOverdue,
+  resolveParties,
+  roleOf,
+  statusBeforeTransition,
+} from './tradeRules.js';
 
 const MAX_ACTIVE_TRADES = 5;
 
@@ -35,7 +49,7 @@ const SCOPES = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-async function loadTrade(id) {
+export async function loadTrade(id) {
   const trade = await prisma.trade.findUnique({ where: { id }, include: tradeInclude });
   if (!trade) throw notFound('Trade not found');
   return trade;
@@ -48,13 +62,13 @@ export async function getTradeForViewer(user, id) {
   return trade;
 }
 
-async function postSystemMessage(tradeId, content, client = prisma) {
+export async function postSystemMessage(tradeId, content, client = prisma) {
   const message = await client.message.create({ data: { tradeId, content, isSystem: true } });
   emitToTrade(tradeId, 'message:new', message);
   return message;
 }
 
-function notifyParties(trade, event = 'trade:updated') {
+export function notifyParties(trade, event = 'trade:updated') {
   emitToTrade(trade.id, 'trade:updated', { id: trade.id, status: trade.status });
   for (const userId of [trade.buyerId, trade.sellerId]) {
     emitToUser(userId, event, { tradeId: trade.id, status: trade.status });
@@ -117,6 +131,96 @@ export async function listMyTrades(userId, { scope, ...pageInput }) {
   );
 }
 
+// ── Finalizers (database side of an on-chain escrow operation) ────────────
+
+async function finalizeLock(trade, { escrowPublicKey, txHash }) {
+  const xlmAmount = formatXlm(trade.xlmAmount);
+  const locked = await prisma.$transaction(async (tx) => {
+    const updated = await tx.trade.update({
+      where: { id: trade.id },
+      data: {
+        status: 'ESCROW_LOCKED',
+        escrowPublicKey,
+        escrowTxHash: txHash,
+        // The payment window starts once funds are actually locked.
+        paymentDeadline: addMinutes(new Date(), env.TRADE_PAYMENT_WINDOW_MINUTES),
+      },
+      include: tradeInclude,
+    });
+    await tx.transaction.create({
+      data: {
+        userId: trade.sellerId,
+        tradeId: trade.id,
+        type: 'ESCROW_LOCK',
+        xlmAmount,
+        counterparty: escrowPublicKey,
+        stellarTxHash: txHash,
+      },
+    });
+    await postSystemMessage(
+      trade.id,
+      `${xlmAmount} XLM is now locked in escrow. The buyer has ${env.TRADE_PAYMENT_WINDOW_MINUTES} minutes to send ₦${trade.ngnAmount} and mark the order as paid.`,
+      tx,
+    );
+    return updated;
+  });
+
+  notifyParties(locked, 'trade:created');
+  return locked;
+}
+
+async function finalizeRelease(trade, txHash) {
+  const xlmAmount = formatXlm(trade.xlmAmount);
+  const completed = await prisma.$transaction(async (tx) => {
+    const updated = await tx.trade.update({
+      where: { id: trade.id },
+      data: { status: 'COMPLETED', releaseTxHash: txHash, completedAt: new Date() },
+      include: tradeInclude,
+    });
+    await tx.transaction.create({
+      data: {
+        userId: trade.buyerId,
+        tradeId: trade.id,
+        type: 'ESCROW_RELEASE',
+        xlmAmount,
+        counterparty: trade.escrowPublicKey,
+        stellarTxHash: txHash,
+      },
+    });
+    await postSystemMessage(trade.id, `${xlmAmount} XLM has been released to the buyer. Trade complete.`, tx);
+    return updated;
+  });
+
+  notifyParties(completed);
+  return completed;
+}
+
+async function finalizeRefund(trade, txHash, { reason, message, reopen = true }) {
+  const refunded = await prisma.$transaction(async (tx) => {
+    const updated = await tx.trade.update({
+      where: { id: trade.id },
+      data: { status: 'CANCELLED', refundTxHash: txHash, cancelReason: reason, cancelledAt: new Date() },
+      include: tradeInclude,
+    });
+    await tx.transaction.create({
+      data: {
+        userId: trade.sellerId,
+        tradeId: trade.id,
+        type: 'ESCROW_REFUND',
+        xlmAmount: formatXlm(trade.xlmAmount),
+        counterparty: trade.escrowPublicKey,
+        stellarTxHash: txHash,
+      },
+    });
+    await postSystemMessage(trade.id, message, tx);
+    return updated;
+  });
+
+  if (reopen) await reopenOrder(trade.orderId);
+  notifyParties(refunded);
+  return refunded;
+}
+
 // ── Commands ───────────────────────────────────────────────────────────────
 
 export async function openTrade(user, { orderId, paymentMethod }) {
@@ -172,7 +276,6 @@ export async function openTrade(user, { orderId, paymentMethod }) {
   broadcast('order:removed', { id: order.id });
 
   const xlmAmount = formatXlm(order.xlmAmount);
-  const ngnAmount = ngnTotal(order.xlmAmount, order.ngnRate);
   const escrowKeypair = createEscrowKeypair();
 
   // The escrow address is stored before submitting so funds are always traceable,
@@ -184,7 +287,7 @@ export async function openTrade(user, { orderId, paymentMethod }) {
       sellerId,
       xlmAmount,
       ngnRate: order.ngnRate,
-      ngnAmount,
+      ngnAmount: ngnTotal(order.xlmAmount, order.ngnRate),
       paymentMethod,
       escrowPublicKey: escrowKeypair.publicKey(),
       paymentDeadline: addMinutes(new Date(), env.TRADE_PAYMENT_WINDOW_MINUTES),
@@ -206,44 +309,13 @@ export async function openTrade(user, { orderId, paymentMethod }) {
       ]);
       broadcast('order:created', { id: order.id });
     } else {
-      // Outcome unknown (e.g. Horizon timeout). Leave PENDING_ESCROW for reconciliation.
+      // Outcome unknown (e.g. Horizon timeout). The reconcile job settles it.
       logger.error('Escrow lock outcome unknown', { tradeId: trade.id, err });
     }
     throw err;
   }
 
-  const locked = await prisma.$transaction(async (tx) => {
-    const updated = await tx.trade.update({
-      where: { id: trade.id },
-      data: {
-        status: 'ESCROW_LOCKED',
-        escrowPublicKey: lock.escrowPublicKey,
-        escrowTxHash: lock.txHash,
-        // The payment window starts once funds are actually locked.
-        paymentDeadline: addMinutes(new Date(), env.TRADE_PAYMENT_WINDOW_MINUTES),
-      },
-      include: tradeInclude,
-    });
-    await tx.transaction.create({
-      data: {
-        userId: sellerId,
-        tradeId: trade.id,
-        type: 'ESCROW_LOCK',
-        xlmAmount,
-        counterparty: lock.escrowPublicKey,
-        stellarTxHash: lock.txHash,
-      },
-    });
-    await postSystemMessage(
-      trade.id,
-      `${xlmAmount} XLM is now locked in escrow. The buyer has ${env.TRADE_PAYMENT_WINDOW_MINUTES} minutes to send ₦${ngnAmount} and mark the order as paid.`,
-      tx,
-    );
-    return updated;
-  });
-
-  notifyParties(locked, 'trade:created');
-  return locked;
+  return finalizeLock(trade, lock);
 }
 
 export async function markPaid(user, tradeId) {
@@ -266,7 +338,7 @@ export async function markPaid(user, tradeId) {
   return updated;
 }
 
-async function executeRelease(trade) {
+export async function executeRelease(trade) {
   const previousStatus = trade.status;
   await claim(trade.id, [previousStatus], 'RELEASING');
 
@@ -287,32 +359,10 @@ async function executeRelease(trade) {
     throw err;
   }
 
-  const xlmAmount = formatXlm(trade.xlmAmount);
-  const completed = await prisma.$transaction(async (tx) => {
-    const updated = await tx.trade.update({
-      where: { id: trade.id },
-      data: { status: 'COMPLETED', releaseTxHash: txHash, completedAt: new Date() },
-      include: tradeInclude,
-    });
-    await tx.transaction.create({
-      data: {
-        userId: trade.buyerId,
-        tradeId: trade.id,
-        type: 'ESCROW_RELEASE',
-        xlmAmount,
-        counterparty: trade.escrowPublicKey,
-        stellarTxHash: txHash,
-      },
-    });
-    await postSystemMessage(trade.id, `${xlmAmount} XLM has been released to the buyer. Trade complete.`, tx);
-    return updated;
-  });
-
-  notifyParties(completed);
-  return completed;
+  return finalizeRelease(trade, txHash);
 }
 
-async function executeRefund(trade, { reason, message }) {
+export async function executeRefund(trade, options) {
   const previousStatus = trade.status;
   await claim(trade.id, [previousStatus], 'REFUNDING');
 
@@ -331,29 +381,7 @@ async function executeRefund(trade, { reason, message }) {
     throw err;
   }
 
-  const refunded = await prisma.$transaction(async (tx) => {
-    const updated = await tx.trade.update({
-      where: { id: trade.id },
-      data: { status: 'CANCELLED', refundTxHash: txHash, cancelReason: reason, cancelledAt: new Date() },
-      include: tradeInclude,
-    });
-    await tx.transaction.create({
-      data: {
-        userId: trade.sellerId,
-        tradeId: trade.id,
-        type: 'ESCROW_REFUND',
-        xlmAmount: formatXlm(trade.xlmAmount),
-        counterparty: trade.escrowPublicKey,
-        stellarTxHash: txHash,
-      },
-    });
-    await postSystemMessage(trade.id, message, tx);
-    return updated;
-  });
-
-  await reopenOrder(trade.orderId);
-  notifyParties(refunded);
-  return refunded;
+  return finalizeRefund(trade, txHash, options);
 }
 
 export async function releaseTrade(user, tradeId) {
@@ -379,4 +407,61 @@ export async function expireTrade(tradeId) {
     reason: 'PAYMENT_TIMEOUT',
     message: 'The payment window expired without payment. Escrowed XLM has been returned to the seller.',
   });
+}
+
+/**
+ * Settles a trade left in PENDING_ESCROW, RELEASING or REFUNDING after an
+ * unknown outcome, by checking what actually happened on-chain.
+ */
+export async function reconcileTrade(tradeId) {
+  const trade = await loadTrade(tradeId);
+  if (!['PENDING_ESCROW', 'RELEASING', 'REFUNDING'].includes(trade.status) || !trade.escrowPublicKey) return null;
+
+  const [exists, transactions] = await Promise.all([
+    accountExists(trade.escrowPublicKey),
+    findEscrowTransactions(trade.escrowPublicKey),
+  ]);
+  const withMemo = (memo) => transactions.find((t) => t.memo === memo);
+
+  if (trade.status === 'PENDING_ESCROW') {
+    const lock = withMemo(ESCROW_MEMOS.lock);
+    if (exists && lock) return finalizeLock(trade, { escrowPublicKey: trade.escrowPublicKey, txHash: lock.hash });
+    if (exists) return null;
+
+    const cancelled = await prisma.trade.update({
+      where: { id: trade.id },
+      data: { status: 'CANCELLED', cancelReason: 'ESCROW_FAILED', cancelledAt: new Date() },
+      include: tradeInclude,
+    });
+    await reopenOrder(trade.orderId);
+    await postSystemMessage(trade.id, 'Escrow could not be funded, so this trade was cancelled. No XLM moved.');
+    notifyParties(cancelled);
+    return cancelled;
+  }
+
+  const closing = withMemo(trade.status === 'RELEASING' ? ESCROW_MEMOS.release : ESCROW_MEMOS.refund);
+
+  if (!exists && closing) {
+    return trade.status === 'RELEASING'
+      ? finalizeRelease(trade, closing.hash)
+      : finalizeRefund(trade, closing.hash, {
+          reason: trade.cancelReason ?? 'PAYMENT_TIMEOUT',
+          message: 'Escrowed XLM has been returned to the seller.',
+          reopen: false,
+        });
+  }
+
+  if (exists) {
+    // The transaction expired without landing; put the trade back so it can be retried.
+    const restored = await prisma.trade.update({
+      where: { id: trade.id },
+      data: { status: statusBeforeTransition(trade) },
+      include: tradeInclude,
+    });
+    notifyParties(restored);
+    return restored;
+  }
+
+  logger.error('Escrow closed without a recognised transaction', { tradeId: trade.id });
+  return null;
 }
