@@ -10,7 +10,7 @@ import { publicUserSelect } from '../lib/selects.js';
 import { addMinutes, isPast, secondsUntil } from '../lib/time.js';
 import { broadcast, emitToTrade, emitToUser } from '../socket/io.js';
 import { explorerTxUrl } from '../stellar/client.js';
-import { lockEscrow, refundEscrow, releaseEscrow } from '../stellar/escrow.js';
+import { createEscrowKeypair, lockEscrow, refundEscrow, releaseEscrow } from '../stellar/escrow.js';
 import { getXlmBalance } from '../stellar/wallet.js';
 import { assertCanAct, availableActions, isPaymentOverdue, resolveParties, roleOf } from './tradeRules.js';
 
@@ -173,7 +173,10 @@ export async function openTrade(user, { orderId, paymentMethod }) {
 
   const xlmAmount = formatXlm(order.xlmAmount);
   const ngnAmount = ngnTotal(order.xlmAmount, order.ngnRate);
+  const escrowKeypair = createEscrowKeypair();
 
+  // The escrow address is stored before submitting so funds are always traceable,
+  // even if the lock succeeds on-chain but a later database write fails.
   const trade = await prisma.trade.create({
     data: {
       orderId: order.id,
@@ -183,13 +186,14 @@ export async function openTrade(user, { orderId, paymentMethod }) {
       ngnRate: order.ngnRate,
       ngnAmount,
       paymentMethod,
+      escrowPublicKey: escrowKeypair.publicKey(),
       paymentDeadline: addMinutes(new Date(), env.TRADE_PAYMENT_WINDOW_MINUTES),
     },
   });
 
   let lock;
   try {
-    lock = await lockEscrow({ sellerSecret: decryptSecret(seller.stellarSecretEnc), xlmAmount });
+    lock = await lockEscrow({ sellerSecret: decryptSecret(seller.stellarSecretEnc), escrowKeypair, xlmAmount });
   } catch (err) {
     if (err.code === 'STELLAR_TX_FAILED') {
       // Definitive rejection — nothing moved on-chain, safe to roll back.

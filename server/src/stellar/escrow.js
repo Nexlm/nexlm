@@ -41,9 +41,16 @@ async function loadEscrow(escrowPublicKey) {
   }
 }
 
-export async function lockEscrow({ sellerSecret, xlmAmount }) {
+/**
+ * Generate the escrow keypair up front so its address can be persisted before
+ * the lock is submitted — if the outcome is ever unknown, we still know where
+ * the funds went.
+ */
+export const createEscrowKeypair = () => Keypair.random();
+
+export async function lockEscrow({ sellerSecret, escrowKeypair, xlmAmount }) {
   const seller = Keypair.fromSecret(sellerSecret);
-  const escrow = Keypair.random();
+  const escrow = escrowKeypair ?? createEscrowKeypair();
   const platform = platformKeypair();
 
   let sellerAccount;
