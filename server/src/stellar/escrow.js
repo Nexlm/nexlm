@@ -4,6 +4,7 @@ import { addXlm } from '../lib/amount.js';
 import {
   accountExists,
   horizon,
+  isNotFound,
   networkPassphrase,
   platformKeypair,
   submitTransaction,
@@ -77,7 +78,7 @@ export async function lockEscrow({ sellerSecret, escrowKeypair, xlmAmount }) {
         highThreshold: 1,
       }),
     )
-    .addMemo(Memo.text('nexlm escrow lock'))
+    .addMemo(Memo.text(ESCROW_MEMOS.lock))
     .setTimeout(60)
     .build();
 
@@ -99,13 +100,36 @@ export async function releaseEscrow({ escrowPublicKey, buyerPublicKey, sellerPub
     .addOperation(payout)
     .addOperation(Operation.setOptions({ signer: { ed25519PublicKey: platform.publicKey(), weight: 0 } }))
     .addOperation(Operation.accountMerge({ destination: sellerPublicKey }))
-    .addMemo(Memo.text('nexlm escrow release'))
+    .addMemo(Memo.text(ESCROW_MEMOS.release))
     .setTimeout(60)
     .build();
 
   tx.sign(platform);
   const result = await submitTransaction(tx);
   return { txHash: result.hash };
+}
+
+export const ESCROW_MEMOS = {
+  lock: 'nexlm escrow lock',
+  release: 'nexlm escrow release',
+  refund: 'nexlm escrow refund',
+};
+
+/**
+ * Successful transactions touching an escrow account, newest first.
+ * Horizon keeps history for merged accounts, so this also finds the closing
+ * release/refund after the escrow account itself is gone.
+ */
+export async function findEscrowTransactions(escrowPublicKey) {
+  try {
+    const page = await horizon.transactions().forAccount(escrowPublicKey).order('desc').limit(10).call();
+    return page.records
+      .filter((r) => r.successful)
+      .map((r) => ({ hash: r.hash, memo: r.memo, createdAt: r.created_at }));
+  } catch (err) {
+    if (isNotFound(err)) return [];
+    throw wrapHorizonError(err);
+  }
 }
 
 export async function refundEscrow({ escrowPublicKey, sellerPublicKey }) {
@@ -115,7 +139,7 @@ export async function refundEscrow({ escrowPublicKey, sellerPublicKey }) {
   const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase })
     .addOperation(Operation.setOptions({ signer: { ed25519PublicKey: platform.publicKey(), weight: 0 } }))
     .addOperation(Operation.accountMerge({ destination: sellerPublicKey }))
-    .addMemo(Memo.text('nexlm escrow refund'))
+    .addMemo(Memo.text(ESCROW_MEMOS.refund))
     .setTimeout(60)
     .build();
 
