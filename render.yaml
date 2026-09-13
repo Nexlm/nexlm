@@ -1,0 +1,44 @@
+# Render blueprint for the Nexlm API and its PostgreSQL database.
+# The client is deployed separately on Vercel (see client/vercel.json).
+services:
+  - type: web
+    name: nexlm-api
+    runtime: node
+    rootDir: .
+    buildCommand: npm ci && npm run db:generate -w server
+    preDeployCommand: npm run db:deploy -w server
+    startCommand: npm start -w server
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nexlm-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: PLATFORM_SECRET_KEY
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: PUBLIC_API_URL
+        sync: false
+      - key: STELLAR_NETWORK
+        value: testnet
+      - key: HORIZON_URL
+        value: https://horizon-testnet.stellar.org
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+
+databases:
+  - name: nexlm-db
+    plan: basic-256mb
