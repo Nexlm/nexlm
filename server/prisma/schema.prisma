@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum KycStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum KycIdType {
+  BVN
+  NIN
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  OPAY
+  PALMPAY
+  KUDA
+  MONIEPOINT
+}
+
+enum OrderType {
+  BUY
+  SELL
+}
+
+enum OrderStatus {
+  ACTIVE
+  FILLED
+  CANCELLED
+  EXPIRED
+}
+
+enum TradeStatus {
+  PENDING_ESCROW
+  ESCROW_LOCKED
+  PAID
+  RELEASING
+  REFUNDING
+  COMPLETED
+  CANCELLED
+}
+
+enum TransactionType {
+  WITHDRAWAL
+  ESCROW_LOCK
+  ESCROW_RELEASE
+  ESCROW_REFUND
+}
+
+model User {
+  id                     String     @id @default(cuid())
+  email                  String     @unique
+  passwordHash           String
+  displayName            String     @unique
+  phone                  String?
+  role                   Role       @default(USER)
+  status                 UserStatus @default(ACTIVE)
+  emailVerified          Boolean    @default(false)
+  emailVerifyTokenHash   String?    @unique
+  passwordResetTokenHash String?    @unique
+  passwordResetExpiresAt DateTime?
+  kycStatus              KycStatus  @default(UNVERIFIED)
+  kycIdType              KycIdType?
+  kycIdLast4             String?
+  kycIdHash              String?    @unique
+  kycFullName            String?
+  kycReference           String?
+  kycSubmittedAt         DateTime?
+  kycReviewedAt          DateTime?
+  stellarPublicKey       String     @unique
+  stellarSecretEnc       String
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+
+  orders          Order[]
+  paymentAccounts PaymentAccount[]
+  buyTrades       Trade[]          @relation("TradeBuyer")
+  sellTrades      Trade[]          @relation("TradeSeller")
+  messages        Message[]
+  transactions    Transaction[]
+}
+
+model PaymentAccount {
+  id            String        @id @default(cuid())
+  userId        String
+  method        PaymentMethod
+  bankName      String?
+  accountName   String
+  accountNumber String
+  createdAt     DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, method, accountNumber])
+}
+
+model Order {
+  id             String          @id @default(cuid())
+  userId         String
+  type           OrderType
+  xlmAmount      Decimal         @db.Decimal(20, 7)
+  ngnRate        Decimal         @db.Decimal(14, 2)
+  paymentMethods PaymentMethod[]
+  terms          String?         @db.VarChar(500)
+  status         OrderStatus     @default(ACTIVE)
+  expiresAt      DateTime
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades Trade[]
+
+  @@index([status, type, expiresAt])
+  @@index([userId])
+}
+
+model Trade {
+  id              String        @id @default(cuid())
+  orderId         String
+  buyerId         String
+  sellerId        String
+  xlmAmount       Decimal       @db.Decimal(20, 7)
+  ngnRate         Decimal       @db.Decimal(14, 2)
+  ngnAmount       Decimal       @db.Decimal(18, 2)
+  paymentMethod   PaymentMethod
+  status          TradeStatus   @default(PENDING_ESCROW)
+  escrowPublicKey String?       @unique
+  escrowTxHash    String?
+  releaseTxHash   String?
+  refundTxHash    String?
+  cancelReason    String?
+  paymentDeadline DateTime
+  paidAt          DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  order        Order         @relation(fields: [orderId], references: [id])
+  buyer        User          @relation("TradeBuyer", fields: [buyerId], references: [id])
+  seller       User          @relation("TradeSeller", fields: [sellerId], references: [id])
+  messages     Message[]
+  transactions Transaction[]
+
+  @@index([status, paymentDeadline])
+  @@index([buyerId])
+  @@index([sellerId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  tradeId   String
+  senderId  String?
+  content   String?  @db.VarChar(2000)
+  imageUrl  String?
+  isSystem  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  trade  Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  sender User? @relation(fields: [senderId], references: [id])
+
+  @@index([tradeId, createdAt])
+}
+
+model Transaction {
+  id            String          @id @default(cuid())
+  userId        String
+  tradeId       String?
+  type          TransactionType
+  xlmAmount     Decimal         @db.Decimal(20, 7)
+  counterparty  String?
+  stellarTxHash String
+  createdAt     DateTime        @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trade Trade? @relation(fields: [tradeId], references: [id])
+
+  @@index([userId, createdAt])
+}
