@@ -1,0 +1,21 @@
+{
+  "name": "nexlm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Peer-to-peer XLM ↔ NGN exchange with on-chain Stellar escrow",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "build": "npm run build -w client",
+    "test": "npm test --workspaces --if-present",
+    "db:migrate": "npm run db:migrate -w server",
+    "db:seed": "npm run db:seed -w server"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
