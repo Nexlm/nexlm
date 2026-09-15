@@ -5,7 +5,8 @@ const name = z
   .trim()
   .min(2, 'Name is too short')
   .max(50, 'Name is too long')
-  .regex(/^[\p{L}' -]+$/u, 'Name contains invalid characters');
+  // \p{M} keeps tone marks in Yoruba and Igbo names (e.g. Adébáyọ̀) valid.
+  .regex(/^[\p{L}\p{M}' -]+$/u, 'Name contains invalid characters');
 
 export const submitKycBody = z.object({
   idType: z.enum(['BVN', 'NIN']),
