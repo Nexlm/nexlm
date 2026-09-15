@@ -29,9 +29,9 @@ export function AccountBanners() {
       <Alert
         tone="warning"
         title="Verify your email address"
-        className="mb-6"
+        className="mb-8"
         action={
-          <button type="button" onClick={resend} disabled={sending} className="text-sm font-medium underline disabled:opacity-50">
+          <button type="button" onClick={resend} disabled={sending} className="link text-sm disabled:opacity-50">
             {sending ? 'Sending…' : 'Resend email'}
           </button>
         }
@@ -46,21 +46,21 @@ export function AccountBanners() {
       <Alert
         tone="info"
         title={user.kycStatus === 'REJECTED' ? 'Identity verification failed' : 'Verify your identity to start trading'}
-        className="mb-6"
+        className="mb-8"
         action={
-          <Link to="/kyc" className="text-sm font-medium underline">
+          <Link to="/kyc" className="link text-sm">
             Verify now
           </Link>
         }
       >
-        Nigerian regulations require a BVN or NIN check before you can buy or sell XLM for Naira.
+        A BVN or NIN check is required before you can buy or sell XLM for Naira.
       </Alert>
     );
   }
 
   if (user.kycStatus === 'PENDING') {
     return (
-      <Alert tone="info" title="Verification under review" className="mb-6">
+      <Alert tone="info" title="Verification under review" className="mb-8">
         We&apos;re reviewing your identity details. This usually takes less than a day.
       </Alert>
     );
