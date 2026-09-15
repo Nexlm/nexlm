@@ -3,11 +3,12 @@ import { Loader2 } from 'lucide-react';
 import { forwardRef } from 'react';
 
 const VARIANTS = {
-  primary: 'bg-brand-600 text-white hover:bg-brand-700 disabled:bg-brand-300',
-  secondary: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:text-slate-400',
-  success: 'bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-300',
-  danger: 'bg-rose-600 text-white hover:bg-rose-700 disabled:bg-rose-300',
-  ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:text-slate-400',
+  primary: 'bg-leaf text-ink hover:bg-mint disabled:bg-leaf/40',
+  success: 'bg-leaf text-ink hover:bg-mint disabled:bg-leaf/40',
+  gold: 'bg-gold text-ink hover:brightness-110 disabled:bg-gold/40',
+  danger: 'bg-ember text-ink hover:brightness-110 disabled:bg-ember/40',
+  secondary: 'border border-line bg-panel text-paper hover:border-leaf disabled:text-moss disabled:hover:border-line',
+  ghost: 'text-soft hover:bg-panel hover:text-paper disabled:text-moss',
 };
 
 const SIZES = {
@@ -26,7 +27,7 @@ export const Button = forwardRef(function Button(
       type={type}
       disabled={disabled || loading}
       className={clsx(
-        'inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center rounded font-semibold transition disabled:cursor-not-allowed',
         VARIANTS[variant],
         SIZES[size],
         className,
