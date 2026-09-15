@@ -20,13 +20,13 @@ export function CopyButton({ value, label = 'Copy', className }) {
       type="button"
       onClick={copy}
       className={clsx(
-        'inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50',
+        'inline-flex items-center gap-1 rounded px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider text-mint hover:bg-mint/10',
         className,
       )}
-      aria-label={copied ? 'Copied' : label}
+      aria-label={copied ? 'Copied' : label || 'Copy'}
     >
       {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-      {copied ? 'Copied' : label}
+      {label && (copied ? 'Copied' : label)}
     </button>
   );
 }
