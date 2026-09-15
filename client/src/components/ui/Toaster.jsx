@@ -3,11 +3,7 @@ import { CircleAlert, CircleCheck, Info, X } from 'lucide-react';
 import { useToastStore } from '../../store/toastStore.js';
 
 const ICONS = { success: CircleCheck, error: CircleAlert, info: Info };
-const TONES = {
-  success: 'text-emerald-600',
-  error: 'text-rose-600',
-  info: 'text-sky-600',
-};
+const TONES = { success: 'text-mint', error: 'text-ember', info: 'text-frost' };
 
 export function Toaster() {
   const toasts = useToastStore((s) => s.toasts);
@@ -21,16 +17,11 @@ export function Toaster() {
           <div
             key={t.id}
             role="status"
-            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-lg"
+            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded border border-line bg-raised p-3 shadow-xl shadow-black/50"
           >
             <Icon className={clsx('mt-0.5 h-5 w-5 shrink-0', TONES[t.tone])} aria-hidden />
-            <p className="flex-1 text-sm text-slate-700">{t.message}</p>
-            <button
-              type="button"
-              onClick={() => dismiss(t.id)}
-              className="text-slate-400 hover:text-slate-600"
-              aria-label="Dismiss"
-            >
+            <p className="flex-1 text-sm text-paper">{t.message}</p>
+            <button type="button" onClick={() => dismiss(t.id)} className="text-moss hover:text-paper" aria-label="Dismiss">
               <X className="h-4 w-4" />
             </button>
           </div>
