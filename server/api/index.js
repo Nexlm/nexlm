@@ -12,6 +12,11 @@ let appPromise;
 
 export default async function handler(req, res) {
   if (configErrors) {
+    // Let the browser read this error instead of reporting a CORS failure.
+    if (req.headers.origin) {
+      res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+      res.setHeader('Vary', 'Origin');
+    }
     res.statusCode = 500;
     res.setHeader('Content-Type', 'application/json');
     res.end(
