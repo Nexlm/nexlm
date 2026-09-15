@@ -6,6 +6,8 @@ import { env } from './config/env.js';
 import { runDueJobs } from './jobs/runDueJobs.js';
 import { asyncHandler } from './lib/asyncHandler.js';
 import { unauthorized } from './lib/errors.js';
+import { logger } from './lib/logger.js';
+import { prisma } from './lib/prisma.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import apiRoutes from './routes/index.js';
 import { UPLOAD_DIR } from './services/upload.service.js';
@@ -28,15 +30,32 @@ export function createApp() {
     res.json({ name: 'Nexlm API', status: 'ok', docs: 'https://github.com/Nexlm/nexlm-docs', health: '/health' });
   });
 
-  app.get('/health', (_req, res) => {
-    res.json({
-      status: 'ok',
-      network: env.STELLAR_NETWORK,
-      runtime: env.isServerless ? 'serverless' : 'server',
-      realtime: !env.isServerless,
-      time: new Date().toISOString(),
-    });
-  });
+  app.get(
+    '/health',
+    asyncHandler(async (req, res) => {
+      const body = {
+        status: 'ok',
+        network: env.STELLAR_NETWORK,
+        runtime: env.isServerless ? 'serverless' : 'server',
+        realtime: !env.isServerless,
+        time: new Date().toISOString(),
+      };
+
+      // /health?deep=1 also checks the database is reachable and migrated.
+      if (req.query.deep !== undefined) {
+        try {
+          await prisma.user.findFirst({ select: { id: true } });
+          body.database = 'ok';
+        } catch (err) {
+          body.status = 'degraded';
+          body.database = err?.code === 'P2021' ? 'migrations missing' : 'unreachable';
+          logger.error('Deep health check failed', { err });
+        }
+      }
+
+      res.status(body.status === 'ok' ? 200 : 503).json(body);
+    }),
+  );
 
   // Serverless has no background timers: settle due work as traffic arrives
   // (throttled to once every 15 s per instance) and on the cron endpoint.
