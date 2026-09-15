@@ -1,20 +1,20 @@
 import clsx from 'clsx';
 
+// Tinted mono chips, like the transaction kinds on the pitch reel.
 const TONES = {
-  slate: 'bg-slate-100 text-slate-700',
-  green: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-  red: 'bg-rose-50 text-rose-700 ring-rose-600/20',
-  amber: 'bg-amber-50 text-amber-800 ring-amber-600/20',
-  blue: 'bg-sky-50 text-sky-700 ring-sky-600/20',
-  brand: 'bg-brand-50 text-brand-700 ring-brand-600/20',
+  moss: 'bg-moss/15 text-soft',
+  mint: 'bg-mint/[0.12] text-mint',
+  ember: 'bg-ember/15 text-ember',
+  gold: 'bg-gold/[0.12] text-gold',
+  frost: 'bg-frost/[0.12] text-frost',
 };
 
-export function Badge({ tone = 'slate', className, children }) {
+export function Badge({ tone = 'moss', className, children }) {
   return (
     <span
       className={clsx(
-        'inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ring-transparent',
-        TONES[tone],
+        'inline-flex items-center gap-1 whitespace-nowrap rounded-[3px] px-2 py-1 font-mono text-[10.5px] font-semibold uppercase tracking-[0.1em]',
+        TONES[tone] ?? TONES.moss,
         className,
       )}
     >
@@ -25,6 +25,6 @@ export function Badge({ tone = 'slate', className, children }) {
 
 /** Renders a status badge from a { label, tone } lookup table. */
 export function StatusBadge({ map, status }) {
-  const meta = map[status] ?? { label: status, tone: 'slate' };
+  const meta = map[status] ?? { label: status, tone: 'moss' };
   return <Badge tone={meta.tone}>{meta.label}</Badge>;
 }
