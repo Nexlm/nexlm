@@ -3,6 +3,9 @@ import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { env } from './config/env.js';
+import { runDueJobs } from './jobs/runDueJobs.js';
+import { asyncHandler } from './lib/asyncHandler.js';
+import { unauthorized } from './lib/errors.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import apiRoutes from './routes/index.js';
 import { UPLOAD_DIR } from './services/upload.service.js';
@@ -21,9 +24,38 @@ export function createApp() {
 
   app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d', index: false }));
 
-  app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', network: env.STELLAR_NETWORK, time: new Date().toISOString() });
+  app.get('/', (_req, res) => {
+    res.json({ name: 'Nexlm API', status: 'ok', docs: 'https://github.com/Nexlm/nexlm-docs', health: '/health' });
   });
+
+  app.get('/health', (_req, res) => {
+    res.json({
+      status: 'ok',
+      network: env.STELLAR_NETWORK,
+      runtime: env.isServerless ? 'serverless' : 'server',
+      realtime: !env.isServerless,
+      time: new Date().toISOString(),
+    });
+  });
+
+  // Serverless has no background timers: settle due work as traffic arrives
+  // (throttled to once every 15 s per instance) and on the cron endpoint.
+  if (env.isServerless) {
+    app.use('/api', async (_req, _res, next) => {
+      await runDueJobs();
+      next();
+    });
+  }
+
+  app.get(
+    '/api/cron/tick',
+    asyncHandler(async (req, res) => {
+      if (!env.CRON_SECRET || req.headers.authorization !== `Bearer ${env.CRON_SECRET}`) {
+        throw unauthorized('Invalid cron secret');
+      }
+      res.json({ ok: true, ran: await runDueJobs({ force: true }) });
+    }),
+  );
 
   app.use('/api', apiRoutes);
 
