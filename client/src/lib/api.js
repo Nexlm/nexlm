@@ -1,4 +1,4 @@
-const BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
+import { API_URL as BASE_URL } from './config.js';
 
 export class ApiError extends Error {
   constructor(status, code, message, details) {
