@@ -11,10 +11,7 @@ import { api } from '../../lib/api.js';
 import { KYC_STATUS, USER_STATUS } from '../../lib/constants.js';
 import { formatDateTime } from '../../lib/format.js';
 
-const toOptions = (map, allLabel) => [
-  { value: '', label: allLabel },
-  ...Object.entries(map).map(([value, meta]) => ({ value, label: meta.label })),
-];
+const toOptions = (map, allLabel) => [{ value: '', label: allLabel }, ...Object.entries(map).map(([value, meta]) => ({ value, label: meta.label }))];
 
 export default function AdminUsersPage() {
   const [params, setParams] = useSearchParams();
@@ -39,10 +36,11 @@ export default function AdminUsersPage() {
 
   return (
     <div className="card overflow-hidden">
-      <div className="grid gap-3 border-b border-slate-100 p-4 sm:grid-cols-3">
+      <div className="grid gap-3 border-b border-line p-4 sm:grid-cols-3">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-moss" />
           <input
+            id="admin-user-search"
             className="field pl-9"
             placeholder="Email, name or Stellar address"
             value={q}
@@ -65,33 +63,33 @@ export default function AdminUsersPage() {
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+            <thead className="table-head border-b border-line text-left">
               <tr>
-                <th className="px-4 py-3">User</th>
-                <th className="px-4 py-3">KYC</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Joined</th>
+                <th className="px-5 py-3 font-semibold">User</th>
+                <th className="px-5 py-3 font-semibold">KYC</th>
+                <th className="px-5 py-3 font-semibold">Status</th>
+                <th className="px-5 py-3 font-semibold">Joined</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-line">
               {data.items.map((u) => (
-                <tr key={u.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <Link to={`/admin/users/${u.id}`} className="font-medium text-slate-900 hover:text-brand-700">
+                <tr key={u.id} className="hover:bg-raised/50">
+                  <td className="px-5 py-3.5">
+                    <Link to={`/admin/users/${u.id}`} className="font-semibold text-paper hover:text-mint">
                       {u.displayName}
                     </Link>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-moss">
                       {u.email}
                       {u.role === 'ADMIN' && ' · admin'}
                     </p>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3.5">
                     <StatusBadge map={KYC_STATUS} status={u.kycStatus} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3.5">
                     <StatusBadge map={USER_STATUS} status={u.status} />
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-slate-500">{formatDateTime(u.createdAt)}</td>
+                  <td className="num whitespace-nowrap px-5 py-3.5 text-xs text-moss">{formatDateTime(u.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
