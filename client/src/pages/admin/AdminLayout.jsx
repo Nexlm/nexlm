@@ -9,10 +9,13 @@ const LINKS = [
 
 export default function AdminLayout() {
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="page-title">Admin</h1>
-        <nav className="flex gap-1 rounded-lg bg-slate-100 p-1">
+    <div className="space-y-8">
+      <div className="flex flex-col gap-4 border-b border-line sm:flex-row sm:items-end sm:justify-between">
+        <div className="pb-5">
+          <p className="eyebrow">Operations</p>
+          <h1 className="page-title mt-3">Admin</h1>
+        </div>
+        <nav className="flex">
           {LINKS.map((l) => (
             <NavLink
               key={l.to}
@@ -20,8 +23,8 @@ export default function AdminLayout() {
               end={l.end}
               className={({ isActive }) =>
                 clsx(
-                  'rounded-md px-4 py-1.5 text-sm font-medium',
-                  isActive ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700',
+                  'relative px-4 pb-4 text-sm font-semibold transition-colors',
+                  isActive ? 'text-paper after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:bg-gold' : 'text-moss hover:text-paper',
                 )
               }
             >
