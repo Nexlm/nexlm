@@ -11,9 +11,9 @@ function FieldShell({ id, label, hint, error, children, className }) {
       )}
       {children}
       {error ? (
-        <p className="mt-1.5 text-xs text-rose-600">{error}</p>
+        <p className="mt-1.5 text-xs text-ember">{error}</p>
       ) : (
-        hint && <p className="mt-1.5 text-xs text-slate-500">{hint}</p>
+        hint && <p className="mt-1.5 text-xs text-moss">{hint}</p>
       )}
     </div>
   );
@@ -28,11 +28,11 @@ export const Input = forwardRef(function Input({ label, hint, error, className, 
           ref={ref}
           id={id}
           aria-invalid={Boolean(error)}
-          className={clsx('field', error && 'field-error', suffix && 'pr-14')}
+          className={clsx('field', error && 'field-error', suffix && 'pr-16')}
           {...props}
         />
         {suffix && (
-          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-slate-500">
+          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center font-mono text-xs text-moss">
             {suffix}
           </span>
         )}
