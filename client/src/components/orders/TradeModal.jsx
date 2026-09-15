@@ -65,45 +65,45 @@ export function TradeModal({ order, onClose }) {
         </>
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
         <TraderBadge user={order.user} />
 
-        <dl className="grid grid-cols-2 gap-3 rounded-lg bg-slate-50 p-4 text-sm">
-          <div>
-            <dt className="text-slate-500">Price</dt>
-            <dd className="font-semibold">{formatNgn(order.ngnRate)} / XLM</dd>
+        <dl className="grid grid-cols-2 border-y border-line">
+          <div className="border-r border-line py-4 pr-4">
+            <dt className="table-head">Price</dt>
+            <dd className="mt-1 font-display text-xl font-bold">{formatNgn(order.ngnRate)}</dd>
           </div>
-          <div>
-            <dt className="text-slate-500">Amount</dt>
-            <dd className="font-semibold">{formatXlm(order.xlmAmount)}</dd>
+          <div className="py-4 pl-4">
+            <dt className="table-head">Amount</dt>
+            <dd className="num mt-1 text-xl font-semibold text-gold">{formatXlm(order.xlmAmount)}</dd>
           </div>
-          <div className="col-span-2">
-            <dt className="text-slate-500">{takerBuys ? 'You pay' : 'You receive'}</dt>
-            <dd className="text-xl font-semibold text-slate-900">{formatNgn(total)}</dd>
+          <div className="col-span-2 border-t border-line py-4">
+            <dt className="table-head">{takerBuys ? 'You pay' : 'You receive'}</dt>
+            <dd className="mt-1 font-display text-4xl font-extrabold tracking-tight">{formatNgn(total)}</dd>
           </div>
         </dl>
 
         {options.length > 1 ? (
           <Select label="Payment method" value={method} onChange={(e) => setMethod(e.target.value)} options={options} />
         ) : (
-          <p className="text-sm text-slate-600">
-            Payment method: <span className="font-medium">{paymentMethodLabel(method)}</span>
+          <p className="text-sm text-soft">
+            Payment method: <span className="font-semibold text-paper">{paymentMethodLabel(method)}</span>
           </p>
         )}
 
         {order.terms && (
           <div>
             <p className="label">Advertiser terms</p>
-            <p className="whitespace-pre-line rounded-lg border border-slate-200 p-3 text-sm text-slate-600">{order.terms}</p>
+            <p className="whitespace-pre-line rounded border border-line bg-ink p-3 text-sm text-soft">{order.terms}</p>
           </div>
         )}
 
-        <div className="flex gap-2 text-xs text-slate-500">
-          <ShieldCheck className="h-4 w-4 shrink-0 text-brand-600" />
+        <div className="flex gap-2 text-xs text-moss">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-mint" />
           <p>
             {takerBuys
-              ? "The seller's XLM is locked in a Stellar escrow account before you pay. It's released to you once the seller confirms your Naira payment."
-              : "Your XLM will be locked in a Stellar escrow account. Only release it after the buyer's Naira is in your account."}
+              ? "The seller's XLM is locked in a Stellar escrow account before you pay, and released to you once the seller confirms your Naira."
+              : "Your XLM is locked in a Stellar escrow account. Only release it after the buyer's Naira is in your account."}
           </p>
         </div>
 
@@ -112,7 +112,7 @@ export function TradeModal({ order, onClose }) {
             tone="error"
             action={
               link && (
-                <Link to={link.to} className="text-sm font-medium underline">
+                <Link to={link.to} className="link text-sm">
                   {link.label}
                 </Link>
               )
