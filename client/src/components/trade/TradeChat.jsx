@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { ImagePlus, Send, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useApi } from '../../hooks/useApi.js';
-import { useSocket, useSocketEvent } from '../../hooks/useSocket.js';
+import { useLiveRefresh, useSocket, useSocketEvent } from '../../hooks/useSocket.js';
 import { api } from '../../lib/api.js';
 import { formatTime } from '../../lib/format.js';
 import { toast } from '../../store/toastStore.js';
@@ -13,35 +13,37 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 function MessageBubble({ message, mine }) {
   if (message.isSystem) {
     return (
-      <div className="my-2 flex justify-center">
-        <p className="max-w-[90%] rounded-lg bg-brand-50 px-3 py-2 text-center text-xs text-brand-800">{message.content}</p>
+      <div className="my-3 flex justify-center">
+        <p className="max-w-[92%] border-l-2 border-gold bg-gold/[0.06] px-3 py-2 font-mono text-[11px] leading-relaxed text-soft">
+          {message.content}
+        </p>
       </div>
     );
   }
 
   return (
     <div className={clsx('flex flex-col', mine ? 'items-end' : 'items-start')}>
-      {!mine && <span className="mb-0.5 text-xs text-slate-500">{message.sender?.displayName}</span>}
+      {!mine && <span className="mb-1 font-mono text-[11px] text-moss">{message.sender?.displayName}</span>}
       <div
         className={clsx(
-          'max-w-[80%] rounded-2xl px-3 py-2 text-sm',
-          mine ? 'rounded-br-sm bg-brand-600 text-white' : 'rounded-bl-sm bg-slate-100 text-slate-900',
+          'max-w-[85%] px-3.5 py-2.5 text-sm leading-relaxed',
+          mine ? 'rounded-2xl rounded-br-[3px] bg-[#25463a] text-paper' : 'rounded-2xl rounded-bl-[3px] bg-[#1d2c25] text-paper',
         )}
       >
         {message.imageUrl && (
           <a href={message.imageUrl} target="_blank" rel="noreferrer" className="block">
-            <img src={message.imageUrl} alt="Payment proof" className="mb-1 max-h-60 rounded-lg object-cover" />
+            <img src={message.imageUrl} alt="Payment proof" className="mb-1.5 max-h-60 rounded object-cover" />
           </a>
         )}
         {message.content && <p className="whitespace-pre-wrap break-words">{message.content}</p>}
       </div>
-      <span className="mt-0.5 text-[11px] text-slate-400">{formatTime(message.createdAt)}</span>
+      <span className="mt-1 font-mono text-[10px] text-moss">{formatTime(message.createdAt)}</span>
     </div>
   );
 }
 
 export function TradeChat({ tradeId, currentUserId, readOnly = false }) {
-  const { data: messages, loading, setData } = useApi(
+  const { data: messages, loading, setData, reload } = useApi(
     () => api.get(`/trades/${tradeId}/messages`).then((r) => r.items),
     [tradeId],
   );
@@ -55,8 +57,7 @@ export function TradeChat({ tradeId, currentUserId, readOnly = false }) {
   const typingTimer = useRef();
   const lastTypingEmit = useRef(0);
 
-  const append = (message) =>
-    setData((list) => (list?.some((m) => m.id === message.id) ? list : [...(list ?? []), message]));
+  const append = (message) => setData((list) => (list?.some((m) => m.id === message.id) ? list : [...(list ?? []), message]));
 
   useSocketEvent('message:new', (message) => {
     if (message.tradeId === tradeId) {
@@ -72,6 +73,8 @@ export function TradeChat({ tradeId, currentUserId, readOnly = false }) {
     typingTimer.current = setTimeout(() => setTyping(false), 3000);
   });
 
+  useLiveRefresh(() => reload({ silent: true }), 4000);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages?.length, typing]);
@@ -79,7 +82,7 @@ export function TradeChat({ tradeId, currentUserId, readOnly = false }) {
   function onTextChange(e) {
     setText(e.target.value);
     const now = Date.now();
-    if (socket && now - lastTypingEmit.current > 2000) {
+    if (socket?.connected && now - lastTypingEmit.current > 2000) {
       lastTypingEmit.current = now;
       socket.emit('trade:typing', { tradeId });
     }
@@ -121,13 +124,13 @@ export function TradeChat({ tradeId, currentUserId, readOnly = false }) {
   }
 
   return (
-    <div className="card flex h-[560px] flex-col">
-      <div className="border-b border-slate-100 px-4 py-3">
-        <h2 className="text-sm font-semibold text-slate-900">Trade chat</h2>
-        <p className="text-xs text-slate-500">Messages are kept for dispute review. Never share passwords or OTPs.</p>
+    <div className="card flex h-[600px] flex-col">
+      <div className="border-b border-line px-5 py-4">
+        <p className="eyebrow">Trade chat</p>
+        <p className="mt-1 text-xs text-moss">Kept for dispute review. Never share passwords or OTPs.</p>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+      <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
         {loading && !messages ? (
           <div className="flex justify-center py-8">
             <Spinner />
@@ -135,15 +138,15 @@ export function TradeChat({ tradeId, currentUserId, readOnly = false }) {
         ) : (
           messages?.map((m) => <MessageBubble key={m.id} message={m} mine={m.senderId === currentUserId} />)
         )}
-        {typing && <p className="text-xs italic text-slate-400">typing…</p>}
+        {typing && <p className="font-mono text-[11px] italic text-moss">typing…</p>}
         <div ref={bottomRef} />
       </div>
 
       {!readOnly && (
-        <form onSubmit={send} className="border-t border-slate-100 p-3">
+        <form onSubmit={send} className="border-t border-line p-3">
           {file && (
-            <div className="mb-2 flex items-center justify-between rounded-md bg-slate-100 px-3 py-1.5 text-xs text-slate-700">
-              <span className="truncate">📎 {file.name}</span>
+            <div className="mb-2 flex items-center justify-between rounded border border-line bg-ink px-3 py-1.5 font-mono text-[11px] text-soft">
+              <span className="truncate">Attached: {file.name}</span>
               <button type="button" onClick={() => setFile(null)} aria-label="Remove attachment">
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -154,7 +157,7 @@ export function TradeChat({ tradeId, currentUserId, readOnly = false }) {
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="rounded-lg p-2.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+              className="rounded p-2.5 text-moss hover:bg-raised hover:text-paper"
               aria-label="Attach payment proof"
             >
               <ImagePlus className="h-5 w-5" />
@@ -173,7 +176,7 @@ export function TradeChat({ tradeId, currentUserId, readOnly = false }) {
             <button
               type="submit"
               disabled={sending || (!text.trim() && !file)}
-              className="rounded-lg bg-brand-600 p-2.5 text-white hover:bg-brand-700 disabled:bg-brand-300"
+              className="rounded bg-leaf p-2.5 text-ink hover:bg-mint disabled:bg-leaf/40"
               aria-label="Send message"
             >
               <Send className="h-5 w-5" />
