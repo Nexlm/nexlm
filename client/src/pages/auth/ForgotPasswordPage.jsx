@@ -27,22 +27,22 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthLayout title="Reset your password" subtitle="We'll email you a link to choose a new one">
+    <AuthLayout title="Reset your password" subtitle="We'll email you a link to choose a new one.">
       {sent ? (
         <Alert tone="success" title="Check your inbox">
           If {email} is registered, a reset link is on its way. It expires in 1 hour.
         </Alert>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
           {error && <Alert tone="error">{error.message}</Alert>}
           <Input label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <Button type="submit" className="w-full" loading={loading}>
+          <Button type="submit" size="lg" className="w-full" loading={loading}>
             Send reset link
           </Button>
         </form>
       )}
-      <p className="mt-6 text-center text-sm">
-        <Link to="/login" className="font-medium text-brand-700 hover:underline">
+      <p className="mt-6 text-sm">
+        <Link to="/login" className="link">
           Back to log in
         </Link>
       </p>
