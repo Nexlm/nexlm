@@ -1,23 +1,28 @@
+import clsx from 'clsx';
 import { Link } from 'react-router-dom';
 import { ErrorState, PageLoader } from '../../components/ui/Feedback.jsx';
 import { useApi } from '../../hooks/useApi.js';
 import { api } from '../../lib/api.js';
 import { formatNgn, formatPercent, formatXlm } from '../../lib/format.js';
 
-function StatCard({ label, value, sub, to }) {
+function Stat({ value, label, sub, to, accent }) {
   const body = (
     <>
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{value}</p>
-      {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
+      <p className={clsx('stat-value', accent)}>{value}</p>
+      <p className="stat-label">{label}</p>
+      {sub && <p className="mt-0.5 font-mono text-[11px] text-moss">{sub}</p>}
     </>
   );
-  return to ? (
-    <Link to={to} className="card block p-5 hover:border-brand-300">
-      {body}
-    </Link>
-  ) : (
-    <div className="card p-5">{body}</div>
+  return (
+    <div className="stat-cell">
+      {to ? (
+        <Link to={to} className="block hover:opacity-80">
+          {body}
+        </Link>
+      ) : (
+        body
+      )}
+    </div>
   );
 }
 
@@ -28,14 +33,32 @@ export default function AdminOverviewPage() {
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <StatCard label="Volume (30d)" value={formatNgn(data.volume30d.ngn)} sub={formatXlm(data.volume30d.xlm)} />
-      <StatCard label="Completed trades (30d)" value={data.trades.completed30d} sub={`${data.trades.cancelled30d} cancelled`} />
-      <StatCard label="Completion rate (30d)" value={formatPercent(data.trades.completionRate30d)} />
-      <StatCard label="Active trades" value={data.trades.active} to="/admin/trades" />
-      <StatCard label="Users" value={data.users.total} sub={`${data.users.verified} KYC verified`} to="/admin/users" />
-      <StatCard label="Pending KYC" value={data.users.pendingKyc} to="/admin/users?kycStatus=PENDING" />
-      <StatCard label="Active orders" value={data.activeOrders} />
+    <div className="space-y-10">
+      <section>
+        <p className="eyebrow">Trading · last 30 days</p>
+        <div className="stat-grid stat-cols-3 mt-4 sm:grid-cols-3">
+          <Stat value={formatNgn(data.volume30d.ngn)} label="traded volume" sub={formatXlm(data.volume30d.xlm)} />
+          <Stat value={data.trades.completed30d} label="completed trades" />
+          <Stat value={formatPercent(data.trades.completionRate30d)} label="completion rate" accent="text-mint" />
+          <Stat value={data.trades.active} label="trades in progress" to="/admin/trades" accent={data.trades.active ? 'text-gold' : undefined} />
+          <Stat value={data.trades.cancelled30d} label="cancelled trades" />
+          <Stat value={data.activeOrders} label="active orders on the market" />
+        </div>
+      </section>
+
+      <section>
+        <p className="eyebrow">People</p>
+        <div className="stat-grid stat-cols-3 mt-4 sm:grid-cols-3">
+          <Stat value={data.users.total} label="registered users" to="/admin/users" />
+          <Stat value={data.users.verified} label="KYC verified" accent="text-mint" to="/admin/users?kycStatus=VERIFIED" />
+          <Stat
+            value={data.users.pendingKyc}
+            label="pending KYC reviews"
+            to="/admin/users?kycStatus=PENDING"
+            accent={data.users.pendingKyc ? 'text-gold' : undefined}
+          />
+        </div>
+      </section>
     </div>
   );
 }
