@@ -10,33 +10,33 @@ export const paymentMethodLabel = (value) =>
   PAYMENT_METHODS.find((m) => m.value === value)?.label ?? value;
 
 export const TRADE_STATUS = {
-  PENDING_ESCROW: { label: 'Locking escrow', tone: 'amber' },
-  ESCROW_LOCKED: { label: 'Awaiting payment', tone: 'amber' },
-  PAID: { label: 'Paid — awaiting release', tone: 'blue' },
-  RELEASING: { label: 'Releasing XLM', tone: 'blue' },
-  REFUNDING: { label: 'Refunding seller', tone: 'blue' },
-  COMPLETED: { label: 'Completed', tone: 'green' },
-  CANCELLED: { label: 'Cancelled', tone: 'slate' },
+  PENDING_ESCROW: { label: 'Locking escrow', tone: 'gold' },
+  ESCROW_LOCKED: { label: 'Awaiting payment', tone: 'gold' },
+  PAID: { label: 'Paid · awaiting release', tone: 'frost' },
+  RELEASING: { label: 'Releasing XLM', tone: 'frost' },
+  REFUNDING: { label: 'Refunding seller', tone: 'frost' },
+  COMPLETED: { label: 'Completed', tone: 'mint' },
+  CANCELLED: { label: 'Cancelled', tone: 'moss' },
 };
 
 export const ORDER_STATUS = {
-  ACTIVE: { label: 'Active', tone: 'green' },
-  FILLED: { label: 'Matched', tone: 'blue' },
-  CANCELLED: { label: 'Cancelled', tone: 'slate' },
-  EXPIRED: { label: 'Expired', tone: 'slate' },
+  ACTIVE: { label: 'Active', tone: 'mint' },
+  FILLED: { label: 'Matched', tone: 'frost' },
+  CANCELLED: { label: 'Cancelled', tone: 'moss' },
+  EXPIRED: { label: 'Expired', tone: 'moss' },
 };
 
 export const KYC_STATUS = {
-  UNVERIFIED: { label: 'Not verified', tone: 'slate' },
-  PENDING: { label: 'Under review', tone: 'amber' },
-  VERIFIED: { label: 'Verified', tone: 'green' },
-  REJECTED: { label: 'Rejected', tone: 'red' },
+  UNVERIFIED: { label: 'Not verified', tone: 'moss' },
+  PENDING: { label: 'Under review', tone: 'gold' },
+  VERIFIED: { label: 'Verified', tone: 'mint' },
+  REJECTED: { label: 'Rejected', tone: 'ember' },
 };
 
 export const USER_STATUS = {
-  ACTIVE: { label: 'Active', tone: 'green' },
-  SUSPENDED: { label: 'Suspended', tone: 'amber' },
-  BANNED: { label: 'Banned', tone: 'red' },
+  ACTIVE: { label: 'Active', tone: 'mint' },
+  SUSPENDED: { label: 'Suspended', tone: 'gold' },
+  BANNED: { label: 'Banned', tone: 'ember' },
 };
 
 export const CANCEL_REASONS = {
