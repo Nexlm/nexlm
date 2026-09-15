@@ -6,9 +6,9 @@ export function Pagination({ pagination, onChange }) {
   const { page, totalPages, total } = pagination;
 
   return (
-    <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm text-slate-500">
-      <span>
-        Page {page} of {totalPages} · {total} total
+    <div className="flex items-center justify-between border-t border-line px-4 py-3">
+      <span className="font-mono text-xs text-moss">
+        Page {page} / {totalPages} · {total} total
       </span>
       <div className="flex gap-2">
         <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => onChange(page - 1)}>
