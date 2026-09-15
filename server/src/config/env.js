@@ -8,7 +8,7 @@ const bool = z
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
-  CLIENT_URL: z.string().default('http://localhost:5173'),
+  CLIENT_URL: z.string().default('http://localhost:5173,https://nexlm-client.vercel.app'),
   PUBLIC_API_URL: z.string().url().default('http://localhost:4000'),
 
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
@@ -40,6 +40,9 @@ const schema = z.object({
   SMILE_PARTNER_ID: z.string().optional(),
   SMILE_API_KEY: z.string().optional(),
   SMILE_ENV: z.enum(['sandbox', 'production']).default('sandbox'),
+
+  // Protects GET /api/cron/tick. Vercel Cron sends it as a bearer token.
+  CRON_SECRET: z.string().min(16).optional(),
 });
 
 // Treat empty strings in .env as "unset" so optional values fall back to defaults.
@@ -48,16 +51,31 @@ const raw = Object.fromEntries(
 );
 
 const parsed = schema.safeParse(raw);
+const serverless = Boolean(process.env.VERCEL);
 
-if (!parsed.success) {
-  const issues = parsed.error.issues.map((i) => `  • ${i.path.join('.')}: ${i.message}`).join('\n');
+/**
+ * On a long-running server we fail fast. On Vercel a crash only shows
+ * "FUNCTION_INVOCATION_FAILED", so the error is exported instead and the
+ * serverless entry responds with a readable list of what's missing.
+ */
+export const configErrors = parsed.success
+  ? null
+  : parsed.error.issues.map((i) => ({ variable: i.path.join('.'), message: i.message }));
+
+if (configErrors && !serverless) {
+  const issues = configErrors.map((i) => `  • ${i.variable}: ${i.message}`).join('\n');
   console.error(`Invalid environment configuration:\n${issues}`);
   process.exit(1);
 }
 
-export const env = Object.freeze({
-  ...parsed.data,
-  clientOrigins: parsed.data.CLIENT_URL.split(',').map((s) => s.trim()),
-  isProduction: parsed.data.NODE_ENV === 'production',
-  isTest: parsed.data.NODE_ENV === 'test',
-});
+export const env = Object.freeze(
+  parsed.success
+    ? {
+        ...parsed.data,
+        clientOrigins: parsed.data.CLIENT_URL.split(',').map((s) => s.trim()),
+        isProduction: parsed.data.NODE_ENV === 'production',
+        isTest: parsed.data.NODE_ENV === 'test',
+        isServerless: serverless,
+      }
+    : { isServerless: serverless },
+);
