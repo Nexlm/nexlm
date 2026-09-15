@@ -2,7 +2,7 @@ import clsx from 'clsx';
 
 export function Tabs({ tabs, value, onChange, className }) {
   return (
-    <div role="tablist" className={clsx('inline-flex rounded-lg bg-slate-100 p-1', className)}>
+    <div role="tablist" className={clsx('inline-flex rounded border border-line bg-ink p-1', className)}>
       {tabs.map((tab) => (
         <button
           key={tab.value}
@@ -11,8 +11,8 @@ export function Tabs({ tabs, value, onChange, className }) {
           aria-selected={value === tab.value}
           onClick={() => onChange(tab.value)}
           className={clsx(
-            'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
-            value === tab.value ? (tab.activeClass ?? 'bg-white text-slate-900 shadow-sm') : 'text-slate-500 hover:text-slate-700',
+            'whitespace-nowrap rounded-[4px] px-4 py-1.5 text-sm font-semibold transition-colors',
+            value === tab.value ? (tab.activeClass ?? 'bg-raised text-paper') : 'text-moss hover:text-paper',
           )}
         >
           {tab.label}
