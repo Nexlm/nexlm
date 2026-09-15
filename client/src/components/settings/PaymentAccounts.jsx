@@ -55,10 +55,10 @@ export function PaymentAccounts() {
 
   return (
     <section className="card p-6">
-      <div className="mb-4 flex items-start justify-between gap-4">
+      <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Payout accounts</h2>
-          <p className="text-sm text-slate-500">Where buyers send your Naira when you sell XLM.</p>
+          <p className="eyebrow">Payout accounts</p>
+          <p className="mt-2 text-sm text-soft">Where buyers send your Naira when you sell XLM.</p>
         </div>
         {!adding && (
           <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
@@ -72,16 +72,16 @@ export function PaymentAccounts() {
       ) : accounts.length === 0 && !adding ? (
         <EmptyState icon={Landmark} title="No payout accounts" description="Add a bank or mobile wallet account to post sell orders." />
       ) : (
-        <ul className="divide-y divide-slate-100">
+        <ul className="border-t border-line">
           {accounts.map((a) => (
-            <li key={a.id} className="flex items-center justify-between py-3">
+            <li key={a.id} className="flex items-center justify-between gap-4 border-b border-line py-3.5">
               <div>
-                <p className="text-sm font-medium text-slate-900">
+                <p className="text-sm font-semibold text-paper">
                   {paymentMethodLabel(a.method)}
-                  {a.bankName && ` · ${a.bankName}`}
+                  {a.bankName && <span className="text-moss"> · {a.bankName}</span>}
                 </p>
-                <p className="text-sm text-slate-500">
-                  {a.accountName} · <span className="mono">{a.accountNumber}</span>
+                <p className="text-sm text-soft">
+                  {a.accountName} · <span className="num">{a.accountNumber}</span>
                 </p>
               </div>
               <Button variant="ghost" size="sm" loading={deleting === a.id} onClick={() => remove(a.id)} aria-label="Remove account">
@@ -93,7 +93,7 @@ export function PaymentAccounts() {
       )}
 
       {adding && (
-        <form onSubmit={save} className="mt-4 grid gap-4 rounded-lg border border-slate-200 p-4 sm:grid-cols-2" noValidate>
+        <form onSubmit={save} className="mt-5 grid gap-5 rounded border border-line bg-ink p-5 sm:grid-cols-2" noValidate>
           <Select label="Method" value={form.method} onChange={update('method')} options={PAYMENT_METHODS} error={errors.method} />
           {form.method === 'BANK_TRANSFER' ? (
             <Input label="Bank name" placeholder="e.g. GTBank" value={form.bankName} onChange={update('bankName')} error={errors.bankName} />
@@ -109,11 +109,9 @@ export function PaymentAccounts() {
             onChange={update('accountNumber')}
             error={errors.accountNumber}
           />
-          <p className="text-xs text-slate-500 sm:col-span-2">
-            The account name must match your verified identity. Third-party accounts lead to disputes.
-          </p>
+          <p className="text-xs text-moss sm:col-span-2">The account name should match your verified identity.</p>
           <div className="flex justify-end gap-2 sm:col-span-2">
-            <Button variant="secondary" onClick={() => setAdding(false)}>
+            <Button variant="ghost" onClick={() => setAdding(false)}>
               Cancel
             </Button>
             <Button type="submit" loading={saving}>
