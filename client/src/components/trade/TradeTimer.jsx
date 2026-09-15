@@ -1,5 +1,4 @@
 import clsx from 'clsx';
-import { Clock } from 'lucide-react';
 import { useCountdown } from '../../hooks/useCountdown.js';
 import { formatCountdown } from '../../lib/format.js';
 
@@ -8,18 +7,16 @@ export function TradeTimer({ deadline, label = 'Time left to pay' }) {
   const urgent = seconds <= 120;
 
   return (
-    <div
-      className={clsx(
-        'flex items-center justify-between rounded-lg border px-4 py-3',
-        urgent ? 'border-rose-200 bg-rose-50 text-rose-800' : 'border-amber-200 bg-amber-50 text-amber-900',
-      )}
-      role="timer"
-      aria-live="polite"
-    >
-      <span className="flex items-center gap-2 text-sm font-medium">
-        <Clock className="h-4 w-4" /> {seconds === 0 ? 'Payment window closed' : label}
-      </span>
-      <span className="font-mono text-xl font-semibold tabular-nums">{formatCountdown(seconds)}</span>
+    <div className="border-y border-line py-5" role="timer" aria-live="polite">
+      <p className={clsx('eyebrow', urgent && 'text-ember')}>{seconds === 0 ? 'Payment window closed' : label}</p>
+      <p
+        className={clsx(
+          'mt-2 font-mono text-6xl font-semibold leading-none tracking-tighter tabular-nums sm:text-7xl',
+          urgent ? 'text-ember' : 'text-gold',
+        )}
+      >
+        {formatCountdown(seconds)}
+      </p>
     </div>
   );
 }
