@@ -7,15 +7,17 @@ import { Avatar } from '../common/TraderBadge.jsx';
 
 const linkClass = ({ isActive }) =>
   clsx(
-    'rounded-md px-3 py-2 text-sm font-medium transition-colors',
-    isActive ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+    'relative px-3 py-5 text-sm font-medium transition-colors',
+    isActive
+      ? 'text-paper after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-gold'
+      : 'text-moss hover:text-paper',
   );
 
 export function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-2 font-semibold text-slate-900">
-      <img src="/favicon.svg" alt="" className="h-7 w-7" />
-      <span className="text-lg tracking-tight">Nexlm</span>
+    <Link to="/" className="flex items-center gap-2.5">
+      <span className="flex h-7 w-7 items-center justify-center rounded-[5px] bg-leaf font-display text-sm font-extrabold text-ink">N</span>
+      <span className="font-display text-xl font-bold tracking-tight text-paper">Nexlm</span>
     </Link>
   );
 }
@@ -46,11 +48,11 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-line bg-ink/85 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <div className="flex items-center gap-6">
           <Logo />
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center md:flex">
             {links.map((l) => (
               <NavLink key={l.to} to={l.to} end={l.end} className={linkClass}>
                 {l.label}
@@ -59,17 +61,20 @@ export function Navbar() {
           </nav>
         </div>
 
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-2 md:flex">
+          <span className="mr-2 hidden items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-moss lg:flex">
+            <span className="h-1.5 w-1.5 rounded-full bg-mint shadow-[0_0_0_3px_rgba(63,208,138,0.18)]" /> Stellar testnet
+          </span>
           {user ? (
             <>
-              <Link to="/settings" className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-slate-100">
+              <Link to="/settings" className="flex items-center gap-2 rounded px-2 py-1 hover:bg-panel">
                 <Avatar name={user.displayName} size="sm" />
-                <span className="text-sm font-medium text-slate-700">{user.displayName}</span>
+                <span className="text-sm font-medium text-paper">{user.displayName}</span>
               </Link>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                className="rounded p-2 text-moss hover:bg-panel hover:text-paper"
                 aria-label="Log out"
               >
                 <LogOut className="h-4 w-4" />
@@ -77,13 +82,10 @@ export function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900">
+              <Link to="/login" className="px-3 text-sm font-medium text-soft hover:text-paper">
                 Log in
               </Link>
-              <Link
-                to="/register"
-                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
-              >
+              <Link to="/register" className="rounded bg-leaf px-4 py-2 text-sm font-semibold text-ink hover:bg-mint">
                 Create account
               </Link>
             </>
@@ -92,7 +94,7 @@ export function Navbar() {
 
         <button
           type="button"
-          className="rounded-md p-2 text-slate-600 md:hidden"
+          className="rounded p-2 text-soft md:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
           aria-expanded={open}
@@ -102,28 +104,34 @@ export function Navbar() {
       </div>
 
       {open && (
-        <nav className="border-t border-slate-200 bg-white px-4 py-3 md:hidden">
-          <div className="flex flex-col gap-1">
+        <nav className="border-t border-line bg-ink px-4 py-3 md:hidden">
+          <div className="flex flex-col">
             {links.map((l) => (
-              <NavLink key={l.to} to={l.to} end={l.end} className={linkClass} onClick={() => setOpen(false)}>
+              <NavLink
+                key={l.to}
+                to={l.to}
+                end={l.end}
+                onClick={() => setOpen(false)}
+                className={({ isActive }) => clsx('border-b border-line py-3 text-sm font-medium', isActive ? 'text-gold' : 'text-soft')}
+              >
                 {l.label}
               </NavLink>
             ))}
             {user ? (
               <>
-                <NavLink to="/settings" className={linkClass} onClick={() => setOpen(false)}>
+                <NavLink to="/settings" onClick={() => setOpen(false)} className="border-b border-line py-3 text-sm font-medium text-soft">
                   Settings
                 </NavLink>
-                <button type="button" onClick={handleLogout} className="rounded-md px-3 py-2 text-left text-sm font-medium text-rose-600">
+                <button type="button" onClick={handleLogout} className="py-3 text-left text-sm font-medium text-ember">
                   Log out
                 </button>
               </>
             ) : (
               <>
-                <NavLink to="/login" className={linkClass} onClick={() => setOpen(false)}>
+                <NavLink to="/login" onClick={() => setOpen(false)} className="border-b border-line py-3 text-sm font-medium text-soft">
                   Log in
                 </NavLink>
-                <NavLink to="/register" className={linkClass} onClick={() => setOpen(false)}>
+                <NavLink to="/register" onClick={() => setOpen(false)} className="py-3 text-sm font-medium text-mint">
                   Create account
                 </NavLink>
               </>
