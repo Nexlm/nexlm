@@ -79,6 +79,22 @@ npm run dev:client   # http://localhost:5173
 
 On testnet, new wallets are funded automatically with 10,000 test XLM. Without SMTP configured, verification and reset emails are printed to the server log.
 
+## Deploying to Vercel
+
+The repo deploys as two Vercel projects from `main`:
+
+| Project | Root Directory | Preset | URL |
+| --- | --- | --- | --- |
+| `nexlm-server` | `server` | Other | https://nexlm-server.vercel.app |
+| `nexlm-client` | `client` | Vite | https://nexlm-client.vercel.app |
+
+1. Create a Postgres database (e.g. Neon via Vercel Marketplace).
+2. In `nexlm-server`, set `DATABASE_URL`, `JWT_SECRET`, `ENCRYPTION_KEY`, `PLATFORM_SECRET_KEY`, `CRON_SECRET`, `CLIENT_URL=https://nexlm-client.vercel.app`, `PUBLIC_API_URL=https://nexlm-server.vercel.app` (plus `CLOUDINARY_URL` for image uploads) and redeploy. Migrations run during the build.
+3. In `nexlm-client`, set `VITE_API_URL=https://nexlm-server.vercel.app` and redeploy.
+4. Check `https://nexlm-server.vercel.app/health`. If a variable is missing, the API answers with `SERVER_NOT_CONFIGURED` and lists it.
+
+On Vercel the API runs serverless: Socket.io is replaced by client polling, and expiry/refund/reconciliation jobs run on incoming traffic plus a cron endpoint. For always-on realtime, deploy the API with `render.yaml` instead. Full guide: [docs → Deployment](https://github.com/Nexlm/nexlm-docs/blob/main/docs/developers/deployment.md).
+
 ## Scripts
 
 | Command | Description |
