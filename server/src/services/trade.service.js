@@ -95,7 +95,18 @@ async function claim(tradeId, fromStatuses, toStatus) {
 // ── Queries ────────────────────────────────────────────────────────────────
 
 export async function getTradeDetails(user, id) {
-  const trade = await getTradeForViewer(user, id);
+  let trade = await getTradeForViewer(user, id);
+
+  // Settle an overdue trade the moment someone looks at it, so viewers never
+  // see a stale "awaiting payment" state even when no scheduler is running.
+  if (isPaymentOverdue(trade)) {
+    try {
+      await expireTrade(trade.id);
+    } catch (err) {
+      logger.warn('Lazy trade expiry failed', { tradeId: trade.id, err });
+    }
+    trade = await getTradeForViewer(user, id);
+  }
 
   const paymentAccount = await prisma.paymentAccount.findFirst({
     where: { userId: trade.sellerId, method: trade.paymentMethod },
