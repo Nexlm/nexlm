@@ -45,12 +45,12 @@ export default function ResetPasswordPage() {
           <Alert tone="success" title="Password updated">
             You can now log in with your new password.
           </Alert>
-          <Link to="/login" className="mt-6 block text-center text-sm font-medium text-brand-700 hover:underline">
+          <Link to="/login" className="link mt-6 block text-sm">
             Go to log in →
           </Link>
         </>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
           {!token && <Alert tone="error">This reset link is missing its token.</Alert>}
           {formError && <Alert tone="error">{formError}</Alert>}
           <Input
@@ -69,7 +69,7 @@ export default function ResetPasswordPage() {
             onChange={(e) => setConfirm(e.target.value)}
             error={errors.confirm}
           />
-          <Button type="submit" className="w-full" loading={loading} disabled={!token}>
+          <Button type="submit" size="lg" className="w-full" loading={loading} disabled={!token}>
             Update password
           </Button>
         </form>
