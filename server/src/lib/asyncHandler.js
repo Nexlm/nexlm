@@ -1,4 +1,9 @@
-/** Wraps an async route handler so rejected promises reach the error middleware. */
+/**
+ * Wraps a route handler so both rejected promises and synchronous throws reach
+ * the error middleware.
+ */
 export const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
+  Promise.resolve()
+    .then(() => fn(req, res, next))
+    .catch(next);
 };
