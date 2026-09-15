@@ -3,7 +3,7 @@ import path from 'node:path';
 import { v2 as cloudinary } from 'cloudinary';
 import { env } from '../config/env.js';
 import { randomToken } from '../lib/crypto.js';
-import { badRequest } from '../lib/errors.js';
+import { badRequest, serviceUnavailable } from '../lib/errors.js';
 import { detectImageType, EXTENSIONS } from '../lib/fileType.js';
 
 export const UPLOAD_DIR = path.resolve(process.cwd(), 'uploads');
@@ -32,5 +32,12 @@ export async function storeImage(file, folder) {
   const mime = detectImageType(file.buffer);
   if (!mime) throw badRequest('Only JPEG, PNG or WebP images are allowed');
 
-  return env.CLOUDINARY_URL ? uploadToCloudinary(file.buffer, folder) : uploadToDisk(file.buffer, folder, mime);
+  if (env.CLOUDINARY_URL) return uploadToCloudinary(file.buffer, folder);
+
+  // Serverless file systems are temporary, so local storage would lose images.
+  if (env.isServerless) {
+    throw serviceUnavailable('Image uploads need CLOUDINARY_URL configured on the server.', 'UPLOADS_NOT_CONFIGURED');
+  }
+
+  return uploadToDisk(file.buffer, folder, mime);
 }
