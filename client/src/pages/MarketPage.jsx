@@ -10,14 +10,15 @@ import { Pagination } from '../components/ui/Pagination.jsx';
 import { Tabs } from '../components/ui/Tabs.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { useDebounce } from '../hooks/useDebounce.js';
-import { useSocketEvent } from '../hooks/useSocket.js';
+import { useLiveRefresh, useSocketEvent } from '../hooks/useSocket.js';
 import { api } from '../lib/api.js';
 import { PAYMENT_METHODS } from '../lib/constants.js';
+import { formatNgn } from '../lib/format.js';
 import { useAuthStore } from '../store/authStore.js';
 
 const SIDE_TABS = [
-  { value: 'buy', label: 'Buy XLM', activeClass: 'bg-emerald-600 text-white shadow-sm' },
-  { value: 'sell', label: 'Sell XLM', activeClass: 'bg-rose-600 text-white shadow-sm' },
+  { value: 'buy', label: 'Buy XLM', activeClass: 'bg-leaf text-ink' },
+  { value: 'sell', label: 'Sell XLM', activeClass: 'bg-ember text-ink' },
 ];
 
 export default function MarketPage() {
@@ -50,34 +51,45 @@ export default function MarketPage() {
   };
   useSocketEvent('order:created', scheduleRefresh);
   useSocketEvent('order:removed', scheduleRefresh);
+  useLiveRefresh(() => reload({ silent: true }), 10000);
 
   const changeFilter = (setter) => (value) => {
     setter(value);
     setPage(1);
   };
 
+  const best = data?.items?.[0];
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-8">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="page-title">P2P Market</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Trade XLM directly with other Nigerians. Every trade is protected by on-chain Stellar escrow.
-          </p>
+          <p className="eyebrow">P2P market · XLM / NGN</p>
+          <h1 className="page-title mt-3">
+            {side === 'buy' ? 'Buy XLM' : 'Sell XLM'} with <span className="text-gold">escrow</span> on every trade.
+          </h1>
         </div>
-        {user && (
-          <Link to="/orders/new">
-            <Button>
-              <Plus className="h-4 w-4" /> Post an order
-            </Button>
-          </Link>
-        )}
+        <div className="flex items-end gap-6">
+          {best && (
+            <div className="text-right">
+              <p className="table-head">{side === 'buy' ? 'Best ask' : 'Best bid'}</p>
+              <p className="font-display text-3xl font-extrabold tracking-tight">{formatNgn(best.ngnRate)}</p>
+            </div>
+          )}
+          {user && (
+            <Link to="/orders/new">
+              <Button>
+                <Plus className="h-4 w-4" /> Post an order
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
-      <div className="card">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 lg:flex-row lg:items-end">
+      <div className="card overflow-hidden">
+        <div className="flex flex-col gap-3 border-b border-line p-4 lg:flex-row lg:items-center">
           <Tabs tabs={SIDE_TABS} value={side} onChange={changeFilter(setSide)} />
-          <div className="grid flex-1 grid-cols-2 gap-3 lg:ml-4 lg:max-w-md">
+          <div className="grid flex-1 grid-cols-2 gap-3 lg:ml-3 lg:max-w-md">
             <Input
               placeholder="Min. amount"
               inputMode="decimal"
@@ -98,7 +110,7 @@ export default function MarketPage() {
           </Button>
         </div>
 
-        <div className="hidden grid-cols-12 gap-4 border-b border-slate-100 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-500 md:grid">
+        <div className="table-head hidden grid-cols-12 gap-4 border-b border-line px-5 py-3 md:grid">
           <span className="col-span-3">Advertiser</span>
           <span className="col-span-2">Price</span>
           <span className="col-span-3">Amount</span>
