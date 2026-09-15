@@ -1,4 +1,4 @@
-import { ExternalLink, Lock, RefreshCw, Wallet } from 'lucide-react';
+import { ExternalLink, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { ActivityList } from '../components/wallet/ActivityList.jsx';
 import { DepositPanel } from '../components/wallet/DepositPanel.jsx';
@@ -14,10 +14,10 @@ import { useAuthStore } from '../store/authStore.js';
 
 function Stat({ label, value, hint }) {
   return (
-    <div>
-      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-slate-900">{value}</p>
-      {hint && <p className="text-xs text-slate-500">{hint}</p>}
+    <div className="stat-cell">
+      <p className="table-head">{label}</p>
+      <p className="num mt-2 text-xl font-semibold text-paper">{value}</p>
+      {hint && <p className="mt-1 text-xs text-moss">{hint}</p>}
     </div>
   );
 }
@@ -33,12 +33,29 @@ export default function WalletPage() {
   if (loading && !wallet) return <PageLoader />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
+  const [whole, fraction] = String(Number(wallet.balance).toLocaleString('en-US', { maximumFractionDigits: 7 })).split('.');
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between gap-4">
+    <div className="space-y-10">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="page-title">Wallet</h1>
-          <p className="mt-1 text-sm text-slate-500">Your Nexlm Stellar wallet for trading.</p>
+          <div className="flex items-center gap-3">
+            <p className="eyebrow">Stellar wallet</p>
+            <Badge tone={wallet.network === 'testnet' ? 'gold' : 'mint'}>{wallet.network === 'testnet' ? 'Testnet' : 'Mainnet'}</Badge>
+          </div>
+          <p className="mt-4 font-display text-6xl font-extrabold leading-none tracking-tight text-paper sm:text-7xl">
+            {whole}
+            {fraction && <span className="text-moss">.{fraction}</span>}
+            <span className="ml-3 font-mono text-2xl font-semibold text-gold">XLM</span>
+          </p>
+          <a
+            href={wallet.explorerUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex items-center gap-1 font-mono text-[11px] text-moss hover:text-gold"
+          >
+            {wallet.publicKey} <ExternalLink className="h-3 w-3" />
+          </a>
         </div>
         <Button variant="ghost" onClick={refresh}>
           <RefreshCw className="h-4 w-4" /> Refresh
@@ -51,42 +68,14 @@ export default function WalletPage() {
         </Alert>
       )}
 
-      <section className="card overflow-hidden">
-        <div className="bg-gradient-to-r from-brand-700 to-brand-500 p-6 text-white">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-2 text-sm text-brand-100">
-              <Wallet className="h-4 w-4" /> Total balance
-            </span>
-            <Badge tone="brand" className="bg-white/15 text-white ring-white/30">
-              {wallet.network === 'testnet' ? 'Testnet' : 'Mainnet'}
-            </Badge>
-          </div>
-          <p className="mt-2 text-4xl font-semibold tracking-tight">{formatXlm(wallet.balance)}</p>
-          <a
-            href={wallet.explorerUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-2 inline-flex items-center gap-1 text-xs text-brand-100 hover:text-white"
-          >
-            View on Stellar Expert <ExternalLink className="h-3 w-3" />
-          </a>
-        </div>
-        <div className="grid grid-cols-2 gap-6 p-6 sm:grid-cols-4">
-          <Stat label="Available" value={formatXlm(wallet.available)} hint="After Stellar reserve" />
-          <Stat
-            label="In sell orders"
-            value={
-              <span className="inline-flex items-center gap-1">
-                <Lock className="h-4 w-4 text-slate-400" /> {formatXlm(wallet.committedToOrders)}
-              </span>
-            }
-          />
-          <Stat label="Withdrawable" value={formatXlm(wallet.withdrawable)} />
-          <Stat label="Reserve" value={formatXlm(wallet.minimumBalance)} hint="Required by Stellar" />
-        </div>
-      </section>
+      <div className="stat-grid stat-cols-4 grid-cols-2 sm:grid-cols-4">
+        <Stat label="Available" value={formatXlm(wallet.available)} hint="After Stellar reserve" />
+        <Stat label="In sell orders" value={formatXlm(wallet.committedToOrders)} hint="Amount + 2 XLM escrow each" />
+        <Stat label="Withdrawable" value={formatXlm(wallet.withdrawable)} />
+        <Stat label="Reserve" value={formatXlm(wallet.minimumBalance)} hint="Required by Stellar" />
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-8 lg:grid-cols-2">
         <section className="card p-6">
           <Tabs
             tabs={[
@@ -95,7 +84,7 @@ export default function WalletPage() {
             ]}
             value={tab}
             onChange={setTab}
-            className="mb-5"
+            className="mb-6"
           />
           {tab === 'deposit' ? (
             <DepositPanel />
@@ -107,7 +96,7 @@ export default function WalletPage() {
         </section>
 
         <section className="card p-6">
-          <h2 className="mb-2 text-base font-semibold text-slate-900">Recent activity</h2>
+          <p className="eyebrow mb-4">Recent on-chain activity</p>
           <ActivityList refreshKey={refreshKey} />
         </section>
       </div>
