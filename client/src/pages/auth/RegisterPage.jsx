@@ -44,8 +44,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <AuthLayout title="Create your account" subtitle="A Stellar wallet is created for you automatically">
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+    <AuthLayout title="Create your account" subtitle="You get a Stellar wallet the moment you sign up.">
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {formError && <Alert tone="error">{formError}</Alert>}
         <Input label="Email" type="email" autoComplete="email" value={form.email} onChange={update('email')} error={errors.email} />
         <Input
@@ -56,32 +56,32 @@ export default function RegisterPage() {
           error={errors.displayName}
           hint="Shown to other traders. Letters, numbers and underscores."
         />
-        <Input
-          label="Password"
-          type="password"
-          autoComplete="new-password"
-          value={form.password}
-          onChange={update('password')}
-          error={errors.password}
-          hint="At least 8 characters with a letter and a number."
-        />
-        <Input
-          label="Confirm password"
-          type="password"
-          autoComplete="new-password"
-          value={form.confirm}
-          onChange={update('confirm')}
-          error={errors.confirm}
-        />
-        <Button type="submit" className="w-full" loading={loading}>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Input
+            label="Password"
+            type="password"
+            autoComplete="new-password"
+            value={form.password}
+            onChange={update('password')}
+            error={errors.password}
+            hint="8+ characters, a letter and a number."
+          />
+          <Input
+            label="Confirm password"
+            type="password"
+            autoComplete="new-password"
+            value={form.confirm}
+            onChange={update('confirm')}
+            error={errors.confirm}
+          />
+        </div>
+        <Button type="submit" size="lg" className="w-full" loading={loading}>
           Create account
         </Button>
-        <p className="text-center text-xs text-slate-500">
-          By continuing you agree to trade honestly. Accounts that abuse escrow or disputes are suspended.
-        </p>
-        <p className="text-center text-sm text-slate-500">
+        <p className="text-xs text-moss">Accounts that abuse escrow or payment claims are suspended.</p>
+        <p className="text-sm text-moss">
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-brand-700 hover:underline">
+          <Link to="/login" className="link">
             Log in
           </Link>
         </p>
