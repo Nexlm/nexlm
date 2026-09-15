@@ -36,8 +36,8 @@ export function ChangePasswordForm() {
 
   return (
     <section className="card p-6">
-      <h2 className="text-base font-semibold text-slate-900">Change password</h2>
-      <form onSubmit={submit} className="mt-4 grid gap-4 sm:grid-cols-3" noValidate>
+      <p className="eyebrow">Change password</p>
+      <form onSubmit={submit} className="mt-5 grid gap-5 sm:grid-cols-3" noValidate>
         <Input
           label="Current password"
           type="password"
@@ -62,7 +62,7 @@ export function ChangePasswordForm() {
           onChange={update('confirm')}
           error={errors.confirm}
         />
-        <div className="sm:col-span-3 sm:text-right">
+        <div className="sm:col-span-3">
           <Button type="submit" loading={saving}>
             Update password
           </Button>
