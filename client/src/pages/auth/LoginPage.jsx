@@ -32,8 +32,8 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthLayout title="Welcome back" subtitle="Log in to trade XLM for Naira">
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+    <AuthLayout title="Welcome back" subtitle="Log in to trade XLM for Naira.">
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {error && <Alert tone="error">{error.message}</Alert>}
         <Input label="Email" type="email" autoComplete="email" value={form.email} onChange={update('email')} required />
         <div>
@@ -45,16 +45,16 @@ export default function LoginPage() {
             onChange={update('password')}
             required
           />
-          <Link to="/forgot-password" className="mt-2 inline-block text-xs font-medium text-brand-700 hover:underline">
+          <Link to="/forgot-password" className="link mt-2 inline-block text-xs">
             Forgot password?
           </Link>
         </div>
-        <Button type="submit" className="w-full" loading={loading}>
+        <Button type="submit" size="lg" className="w-full" loading={loading}>
           Log in
         </Button>
-        <p className="text-center text-sm text-slate-500">
+        <p className="text-sm text-moss">
           New to Nexlm?{' '}
-          <Link to="/register" className="font-medium text-brand-700 hover:underline">
+          <Link to="/register" className="link">
             Create an account
           </Link>
         </p>
