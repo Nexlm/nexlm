@@ -32,7 +32,7 @@ export default function VerifyEmailPage() {
   return (
     <AuthLayout title="Email verification">
       {state === 'loading' && (
-        <div className="flex items-center justify-center gap-3 py-6 text-sm text-slate-600">
+        <div className="flex items-center gap-3 py-6 text-sm text-soft">
           <Spinner /> Verifying your email…
         </div>
       )}
@@ -41,10 +41,14 @@ export default function VerifyEmailPage() {
           Next step: verify your identity so you can start trading.
         </Alert>
       )}
-      {state === 'error' && <Alert tone="error" title="Verification failed">{message}</Alert>}
+      {state === 'error' && (
+        <Alert tone="error" title="Verification failed">
+          {message}
+        </Alert>
+      )}
       {state === 'missing' && <Alert tone="error">This link is missing its verification token.</Alert>}
-      <div className="mt-6 text-center">
-        <Link to={state === 'success' && loggedIn ? '/kyc' : '/'} className="text-sm font-medium text-brand-700 hover:underline">
+      <div className="mt-6">
+        <Link to={state === 'success' && loggedIn ? '/kyc' : '/'} className="link text-sm">
           {state === 'success' && loggedIn ? 'Continue to identity verification →' : 'Go to Nexlm →'}
         </Link>
       </div>
