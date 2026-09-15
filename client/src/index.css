@@ -4,36 +4,109 @@
 
 @layer base {
   html {
+    color-scheme: dark;
     -webkit-tap-highlight-color: transparent;
   }
 
+  body {
+    @apply bg-ink font-sans text-paper antialiased;
+    /* Ledger ruling: a faint line every row, like closed Stellar ledgers. */
+    background-image:
+      radial-gradient(70rem 40rem at 100% -10%, rgba(22, 160, 93, 0.13), transparent 60%),
+      radial-gradient(50rem 30rem at -10% 110%, rgba(243, 196, 75, 0.05), transparent 60%),
+      repeating-linear-gradient(to bottom, transparent 0 55px, rgba(233, 238, 228, 0.025) 55px 56px);
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
   :focus-visible {
-    @apply outline-none ring-2 ring-brand-500 ring-offset-2;
+    @apply outline-none ring-2 ring-gold ring-offset-2 ring-offset-ink;
+  }
+
+  option {
+    background: #0c1310;
+    color: #e9eee4;
+  }
+
+  ::selection {
+    background: rgba(243, 196, 75, 0.35);
   }
 }
 
 @layer components {
   .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-card;
+    @apply rounded border border-line bg-panel/70 backdrop-blur-[2px];
+  }
+
+  .eyebrow {
+    @apply font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-mint;
   }
 
   .label {
-    @apply mb-1.5 block text-sm font-medium text-slate-700;
+    @apply mb-1.5 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-moss;
   }
 
   .field {
-    @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:bg-slate-100 disabled:text-slate-500;
+    @apply block w-full rounded border border-line bg-ink px-3 py-2.5 text-sm text-paper placeholder:text-moss focus:border-leaf focus:outline-none focus:ring-2 focus:ring-leaf/25 disabled:opacity-50;
   }
 
   .field-error {
-    @apply border-rose-400 focus:border-rose-500 focus:ring-rose-500/20;
+    @apply border-ember focus:border-ember focus:ring-ember/25;
   }
 
   .page-title {
-    @apply text-2xl font-semibold tracking-tight text-slate-900;
+    @apply font-display text-3xl font-extrabold tracking-tight text-paper sm:text-4xl;
+  }
+
+  .num {
+    @apply font-mono tabular-nums;
   }
 
   .mono {
     @apply font-mono text-[13px];
+  }
+
+  .link {
+    @apply font-medium text-mint underline-offset-4 hover:underline;
+  }
+
+  /* Hairline stat grid, as on the pitch reel's "Built & tested" scene. */
+  .stat-grid {
+    @apply grid border-t border-line;
+  }
+
+  /* Cells pad on the left only after a divider; each grid removes it from
+     cells that start a row (see the n-column helpers below). */
+  .stat-cell {
+    @apply border-b border-line py-5 pr-5 sm:pl-6;
+  }
+
+  .stat-cols-2 > .stat-cell:nth-child(2n + 1),
+  .stat-cols-3 > .stat-cell:nth-child(3n + 1),
+  .stat-cols-4 > .stat-cell:nth-child(4n + 1) {
+    @apply sm:pl-0;
+  }
+
+  .stat-cols-2 > .stat-cell:not(:nth-child(2n)),
+  .stat-cols-3 > .stat-cell:not(:nth-child(3n)),
+  .stat-cols-4 > .stat-cell:not(:nth-child(4n)) {
+    @apply sm:border-r sm:border-line;
+  }
+
+  .stat-value {
+    @apply font-display text-3xl font-extrabold tracking-tight text-paper sm:text-4xl;
+  }
+
+  .stat-label {
+    @apply mt-1.5 text-sm text-soft;
+  }
+
+  .table-head {
+    @apply font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-moss;
   }
 }
