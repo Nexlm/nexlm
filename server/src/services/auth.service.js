@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { env } from '../config/env.js';
 import { randomToken, sha256 } from '../lib/crypto.js';
 import { badRequest, conflict, forbidden, unauthorized } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
@@ -40,8 +41,16 @@ export async function register({ email, password, displayName }) {
     select: sessionUserSelect,
   });
 
-  fundTestnetAccount(publicKey).catch((err) => logger.warn('Friendbot funding failed', { err, publicKey }));
-  sendVerificationEmail(email, verifyToken).catch((err) => logger.error('Verification email failed', { err }));
+  const background = Promise.all([
+    fundTestnetAccount(publicKey).catch((err) => logger.warn('Friendbot funding failed', { err, publicKey })),
+    sendVerificationEmail(email, verifyToken).catch((err) => logger.error('Verification email failed', { err })),
+  ]);
+
+  // Serverless functions can be frozen right after responding, so give this
+  // work a chance to finish (bounded, so sign-up never hangs).
+  if (env.isServerless) {
+    await Promise.race([background, new Promise((resolve) => setTimeout(resolve, 8000))]);
+  }
 
   return { user, token: signAccessToken(user) };
 }
