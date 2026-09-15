@@ -12,29 +12,27 @@ export function TradeGuide({ trade }) {
     case 'PENDING_ESCROW':
       return (
         <Alert tone="info" title="Locking escrow on Stellar">
-          The seller&apos;s XLM is being moved into escrow. This normally takes a few seconds.
+          The seller&apos;s XLM is moving into escrow. This normally takes a few seconds.
         </Alert>
       );
     case 'ESCROW_LOCKED':
       return buyer ? (
         <Alert tone="warning" title={`Send ${ngn} to the seller`}>
-          {xlm} is locked in escrow for you. Transfer the exact amount to the account below, then tap{' '}
-          <strong>I have paid</strong> before the timer runs out.
+          {xlm} is locked in escrow for you. Transfer the exact amount, then tap <strong>I have paid</strong> before the timer runs out.
         </Alert>
       ) : (
         <Alert tone="info" title="Waiting for the buyer to pay">
-          Your {xlm} is safely locked in escrow. If the buyer doesn&apos;t pay in time, it&apos;s returned to you automatically.
+          Your {xlm} is locked in escrow. If the buyer doesn&apos;t pay in time, it&apos;s returned to you automatically.
         </Alert>
       );
     case 'PAID':
       return buyer ? (
         <Alert tone="info" title="Waiting for the seller to release">
-          The seller has been notified. Share your payment receipt in the chat to speed things up.
+          The seller has been notified. Share your receipt in the chat to speed things up.
         </Alert>
       ) : (
         <Alert tone="warning" title={`The buyer says they sent ${ngn}`}>
-          Open your bank or wallet app and confirm the money has <strong>actually arrived</strong> before releasing. Never
-          release based on a screenshot alone.
+          Confirm the money has <strong>actually arrived</strong> in your banking app before releasing. Never release on a screenshot.
         </Alert>
       );
     case 'RELEASING':
