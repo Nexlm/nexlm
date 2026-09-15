@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ArrowDownLeft, ArrowUpRight, ExternalLink, History } from 'lucide-react';
+import { ExternalLink, History } from 'lucide-react';
 import { useState } from 'react';
 import { useApi } from '../../hooks/useApi.js';
 import { api } from '../../lib/api.js';
@@ -9,8 +9,13 @@ import { EmptyState, ErrorState, Spinner } from '../ui/Feedback.jsx';
 
 const KIND_LABELS = {
   payment: { in: 'Received', out: 'Sent' },
-  create_account: { in: 'Account funded', out: 'Funded account' },
+  create_account: { in: 'Account funded', out: 'Escrow funded' },
   account_merge: { in: 'Escrow returned', out: 'Account merged' },
+};
+
+const KIND_TONE = {
+  in: 'bg-mint/[0.12] text-mint',
+  out: 'bg-gold/[0.12] text-gold',
 };
 
 export function ActivityList({ refreshKey }) {
@@ -45,29 +50,28 @@ export function ActivityList({ refreshKey }) {
   }
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (items.length === 0) {
-    return <EmptyState icon={History} title="No activity yet" description="Deposits, trades and withdrawals will show up here." />;
+    return <EmptyState icon={History} title="No activity yet" description="Deposits, escrow movements and withdrawals appear here." />;
   }
 
   return (
     <div>
-      <ul className="divide-y divide-slate-100">
+      <ul className="border-t border-line">
         {items.map((item) => {
           const incoming = item.direction === 'in';
-          const Icon = incoming ? ArrowDownLeft : ArrowUpRight;
           return (
-            <li key={item.id} className="flex items-center gap-3 py-3">
-              <div className={clsx('rounded-full p-2', incoming ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600')}>
-                <Icon className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-slate-900">{KIND_LABELS[item.kind]?.[item.direction] ?? item.kind}</p>
-                <p className="mono truncate text-slate-500">
+            <li key={item.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-4 border-b border-line py-3.5">
+              <span className={clsx('rounded-[3px] px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.1em]', KIND_TONE[item.direction])}>
+                {incoming ? 'In' : 'Out'}
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-paper">{KIND_LABELS[item.kind]?.[item.direction] ?? item.kind}</p>
+                <p className="mono truncate text-moss">
                   {incoming ? 'from' : 'to'} {shortAddress(item.counterparty, 6)} · {formatDateTime(item.createdAt)}
                 </p>
               </div>
               <div className="text-right">
                 {item.amount && (
-                  <p className={clsx('text-sm font-semibold', incoming ? 'text-emerald-600' : 'text-slate-900')}>
+                  <p className={clsx('num text-sm font-semibold', incoming ? 'text-mint' : 'text-paper')}>
                     {incoming ? '+' : '−'}
                     {formatXlm(item.amount)}
                   </p>
@@ -76,9 +80,9 @@ export function ActivityList({ refreshKey }) {
                   href={item.explorerUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-brand-700 hover:underline"
+                  className="inline-flex items-center gap-1 font-mono text-[11px] text-moss hover:text-gold"
                 >
-                  Explorer <ExternalLink className="h-3 w-3" />
+                  tx <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
             </li>
@@ -86,7 +90,7 @@ export function ActivityList({ refreshKey }) {
         })}
       </ul>
       {nextCursor && (
-        <div className="pt-3 text-center">
+        <div className="pt-4 text-center">
           <Button variant="secondary" size="sm" loading={loadingMore} onClick={loadMore}>
             Load more
           </Button>
