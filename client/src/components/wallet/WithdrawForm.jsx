@@ -49,10 +49,10 @@ export function WithdrawForm({ withdrawable, onDone }) {
 
   return (
     <>
-      <form onSubmit={review} className="space-y-4" noValidate>
+      <form onSubmit={review} className="space-y-5" noValidate>
         {result && (
           <Alert tone="success" title="Withdrawal submitted">
-            <a href={result.explorerUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline">
+            <a href={result.explorerUrl} target="_blank" rel="noreferrer" className="link inline-flex items-center gap-1">
               View on Stellar Expert <ExternalLink className="h-3.5 w-3.5" />
             </a>
           </Alert>
@@ -67,21 +67,13 @@ export function WithdrawForm({ withdrawable, onDone }) {
           spellCheck={false}
         />
         <div>
-          <Input
-            label="Amount"
-            inputMode="decimal"
-            placeholder="0.00"
-            suffix="XLM"
-            value={form.amount}
-            onChange={update('amount')}
-            error={errors.amount}
-          />
+          <Input label="Amount" inputMode="decimal" placeholder="0.00" suffix="XLM" value={form.amount} onChange={update('amount')} error={errors.amount} />
           <button
             type="button"
-            className="mt-1.5 text-xs font-medium text-brand-700 hover:underline"
+            className="link mt-2 font-mono text-[11px]"
             onClick={() => setForm((f) => ({ ...f, amount: String(withdrawable) }))}
           >
-            Max: {formatXlm(withdrawable)}
+            Max {formatXlm(withdrawable)}
           </button>
         </div>
         <Input
@@ -91,9 +83,9 @@ export function WithdrawForm({ withdrawable, onDone }) {
           value={form.memo}
           onChange={update('memo')}
           error={errors.memo}
-          hint="Sending to an exchange? Check whether it requires a memo — missing memos can lose funds."
+          hint="Sending to an exchange? Include its memo or funds may not be credited."
         />
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" size="lg">
           Review withdrawal
         </Button>
       </form>
@@ -107,33 +99,24 @@ export function WithdrawForm({ withdrawable, onDone }) {
             <Button variant="secondary" onClick={() => setReviewing(false)}>
               Back
             </Button>
-            <Button loading={sending} onClick={submit}>
+            <Button variant="gold" loading={sending} onClick={submit}>
               Send {formatXlm(form.amount)}
             </Button>
           </>
         }
       >
-        <dl className="space-y-3 text-sm">
-          <div className="flex justify-between gap-4">
-            <dt className="text-slate-500">To</dt>
-            <dd className="mono text-right" title={form.destination}>
-              {shortAddress(form.destination, 8)}
-            </dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-slate-500">Amount</dt>
-            <dd className="font-semibold">{formatXlm(form.amount)}</dd>
-          </div>
-          {form.memo && (
-            <div className="flex justify-between">
-              <dt className="text-slate-500">Memo</dt>
-              <dd>{form.memo}</dd>
+        <dl className="border-t border-line text-sm">
+          {[
+            ['To', <span key="to" className="num" title={form.destination}>{shortAddress(form.destination, 8)}</span>],
+            ['Amount', <span key="amt" className="num font-semibold text-gold">{formatXlm(form.amount)}</span>],
+            ...(form.memo ? [['Memo', form.memo]] : []),
+            ['Network fee', <span key="fee" className="num">0.00001 XLM</span>],
+          ].map(([label, value]) => (
+            <div key={label} className="flex justify-between gap-4 border-b border-line py-3">
+              <dt className="text-moss">{label}</dt>
+              <dd className="text-right">{value}</dd>
             </div>
-          )}
-          <div className="flex justify-between">
-            <dt className="text-slate-500">Network fee</dt>
-            <dd>0.00001 XLM</dd>
-          </div>
+          ))}
         </dl>
         <Alert tone="warning" className="mt-4">
           Stellar payments are irreversible. Double-check the address.
