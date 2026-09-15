@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { tradeCountLabel } from '../../components/common/TraderBadge.jsx';
 import { StatusBadge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Alert, ErrorState, PageLoader } from '../../components/ui/Feedback.jsx';
@@ -12,9 +13,9 @@ import { toast } from '../../store/toastStore.js';
 
 function Row({ label, children }) {
   return (
-    <div className="flex justify-between gap-4 py-2 text-sm">
-      <dt className="text-slate-500">{label}</dt>
-      <dd className="text-right text-slate-900">{children}</dd>
+    <div className="flex justify-between gap-4 border-b border-line py-3 text-sm">
+      <dt className="table-head pt-0.5">{label}</dt>
+      <dd className="text-right text-paper">{children}</dd>
     </div>
   );
 }
@@ -37,8 +38,7 @@ export default function AdminUserDetailPage() {
     }
   }
 
-  const setStatus = (status) =>
-    run(status, () => api.patch(`/admin/users/${id}/status`, { status }), `Account set to ${status.toLowerCase()}`);
+  const setStatus = (status) => run(status, () => api.patch(`/admin/users/${id}/status`, { status }), `Account set to ${status.toLowerCase()}`);
   const decideKyc = (decision) =>
     run(decision, () => api.post(`/admin/kyc/${id}`, { decision }), decision === 'APPROVE' ? 'KYC approved' : 'KYC rejected');
 
@@ -46,34 +46,37 @@ export default function AdminUserDetailPage() {
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
   return (
-    <div className="space-y-6">
-      <Link to="/admin/users" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700">
-        <ArrowLeft className="h-4 w-4" /> All users
+    <div className="space-y-8">
+      <Link to="/admin/users" className="inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-moss hover:text-paper">
+        <ArrowLeft className="h-3.5 w-3.5" /> All users
       </Link>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="card p-6">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{user.displayName}</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-2xl font-extrabold">{user.displayName}</h2>
             <StatusBadge map={USER_STATUS} status={user.status} />
           </div>
-          <dl className="divide-y divide-slate-100">
+          <dl className="border-t border-line">
             <Row label="Email">
-              {user.email} {user.emailVerified ? '✓' : '(unverified)'}
+              {user.email} {user.emailVerified ? <span className="text-mint">✓</span> : <span className="text-gold">(unverified)</span>}
             </Row>
             <Row label="Phone">{user.phone ?? '—'}</Row>
             <Row label="Role">{user.role}</Row>
-            <Row label="Completed trades">{user.stats.completedTrades}</Row>
-            <Row label="Completion rate">{formatPercent(user.stats.completionRate)}</Row>
+            <Row label="Reputation">
+              {tradeCountLabel(user.stats.completedTrades)} · {formatPercent(user.stats.completionRate)}
+            </Row>
             <Row label="Stellar">
               <span className="mono break-all">{user.stellarPublicKey}</span>
             </Row>
-            <Row label="Joined">{formatDateTime(user.createdAt)}</Row>
+            <Row label="Joined">
+              <span className="num">{formatDateTime(user.createdAt)}</span>
+            </Row>
           </dl>
           {user.role !== 'ADMIN' && (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-5 flex flex-wrap gap-2">
               {user.status !== 'ACTIVE' && (
-                <Button size="sm" variant="success" loading={busy === 'ACTIVE'} onClick={() => setStatus('ACTIVE')}>
+                <Button size="sm" loading={busy === 'ACTIVE'} onClick={() => setStatus('ACTIVE')}>
                   Reactivate
                 </Button>
               )}
@@ -92,30 +95,38 @@ export default function AdminUserDetailPage() {
         </section>
 
         <section className="card p-6">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Identity</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-2xl font-extrabold">Identity</h2>
             <StatusBadge map={KYC_STATUS} status={user.kycStatus} />
           </div>
           {user.kycSubmittedAt ? (
-            <dl className="divide-y divide-slate-100">
-              <Row label="Name on submission">{user.kycFullName}</Row>
+            <dl className="border-t border-line">
+              <Row label="Name">{user.kycFullName}</Row>
               <Row label="ID">
-                {user.kycIdType} ···{user.kycIdLast4}
+                <span className="num">
+                  {user.kycIdType} ···{user.kycIdLast4}
+                </span>
               </Row>
-              <Row label="Provider reference">{user.kycReference ?? 'Manual review'}</Row>
-              <Row label="Submitted">{formatDateTime(user.kycSubmittedAt)}</Row>
-              {user.kycReviewedAt && <Row label="Reviewed">{formatDateTime(user.kycReviewedAt)}</Row>}
+              <Row label="Reference">{user.kycReference ?? 'Manual review'}</Row>
+              <Row label="Submitted">
+                <span className="num">{formatDateTime(user.kycSubmittedAt)}</span>
+              </Row>
+              {user.kycReviewedAt && (
+                <Row label="Reviewed">
+                  <span className="num">{formatDateTime(user.kycReviewedAt)}</span>
+                </Row>
+              )}
             </dl>
           ) : (
-            <p className="text-sm text-slate-500">No identity details submitted.</p>
+            <p className="text-sm text-moss">No identity details submitted.</p>
           )}
           {user.kycStatus === 'PENDING' && (
             <>
-              <Alert tone="warning" className="mt-4">
+              <Alert tone="warning" className="mt-5">
                 Confirm the name matches the payout account names below before approving.
               </Alert>
               <div className="mt-4 flex gap-2">
-                <Button size="sm" variant="success" loading={busy === 'APPROVE'} onClick={() => decideKyc('APPROVE')}>
+                <Button size="sm" loading={busy === 'APPROVE'} onClick={() => decideKyc('APPROVE')}>
                   Approve
                 </Button>
                 <Button size="sm" variant="danger" loading={busy === 'REJECT'} onClick={() => decideKyc('REJECT')}>
@@ -125,13 +136,13 @@ export default function AdminUserDetailPage() {
             </>
           )}
 
-          <h3 className="mt-6 text-sm font-semibold">Payout accounts</h3>
-          <ul className="mt-2 space-y-1 text-sm text-slate-600">
-            {user.paymentAccounts.length === 0 && <li>None</li>}
+          <p className="eyebrow mt-8">Payout accounts</p>
+          <ul className="mt-3 border-t border-line text-sm">
+            {user.paymentAccounts.length === 0 && <li className="py-3 text-moss">None</li>}
             {user.paymentAccounts.map((a) => (
-              <li key={a.id}>
-                {paymentMethodLabel(a.method)} {a.bankName && `(${a.bankName})`} — {a.accountName} ·{' '}
-                <span className="mono">{a.accountNumber}</span>
+              <li key={a.id} className="border-b border-line py-3 text-soft">
+                <span className="font-semibold text-paper">{paymentMethodLabel(a.method)}</span> {a.bankName && `(${a.bankName})`} — {a.accountName} ·{' '}
+                <span className="num">{a.accountNumber}</span>
               </li>
             ))}
           </ul>
@@ -139,30 +150,28 @@ export default function AdminUserDetailPage() {
       </div>
 
       <section className="card overflow-hidden">
-        <h2 className="border-b border-slate-100 px-6 py-4 text-base font-semibold">Recent trades</h2>
+        <p className="eyebrow border-b border-line px-5 py-4">Recent trades</p>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-line">
               {user.recentTrades.map((t) => (
-                <tr key={t.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-3">
-                    <Link to={`/admin/trades/${t.id}`} className="font-medium text-brand-700 hover:underline">
-                      {t.buyerId === user.id ? 'Bought' : 'Sold'} {formatXlm(t.xlmAmount)}
+                <tr key={t.id} className="hover:bg-raised/50">
+                  <td className="px-5 py-3.5">
+                    <Link to={`/admin/trades/${t.id}`} className="font-semibold text-paper hover:text-mint">
+                      {t.buyerId === user.id ? 'Bought' : 'Sold'} <span className="num text-gold">{formatXlm(t.xlmAmount)}</span>
                     </Link>
                   </td>
-                  <td className="px-6 py-3">{formatNgn(t.ngnAmount)}</td>
-                  <td className="px-6 py-3">
-                    with {t.buyerId === user.id ? t.seller.displayName : t.buyer.displayName}
-                  </td>
-                  <td className="px-6 py-3">
+                  <td className="px-5 py-3.5 font-display font-bold">{formatNgn(t.ngnAmount)}</td>
+                  <td className="px-5 py-3.5 text-soft">with {t.buyerId === user.id ? t.seller.displayName : t.buyer.displayName}</td>
+                  <td className="px-5 py-3.5">
                     <StatusBadge map={TRADE_STATUS} status={t.status} />
                   </td>
-                  <td className="whitespace-nowrap px-6 py-3 text-slate-500">{formatDateTime(t.createdAt)}</td>
+                  <td className="num whitespace-nowrap px-5 py-3.5 text-xs text-moss">{formatDateTime(t.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {user.recentTrades.length === 0 && <p className="px-6 py-4 text-sm text-slate-500">No trades yet.</p>}
+          {user.recentTrades.length === 0 && <p className="px-5 py-4 text-sm text-moss">No trades yet.</p>}
         </div>
       </section>
     </div>
