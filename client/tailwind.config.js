@@ -4,25 +4,28 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-        },
+        // Nexlm "ledger" palette — shared with the pitch reel and landing site.
+        ground: '#070b09',
+        ink: '#0c1310',
+        panel: '#13201a',
+        raised: '#182822',
+        line: '#22342b',
+        paper: '#e9eee4',
+        soft: '#c4cdc2',
+        moss: '#7b8a80',
+        leaf: '#16a05d',
+        mint: '#3fd08a',
+        gold: '#f3c44b',
+        ember: '#e0654f',
+        frost: '#9ec3ff',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        display: ['"Bricolage Grotesque"', '"Segoe UI"', 'system-ui', 'sans-serif'],
+        sans: ['"Instrument Sans"', '"Segoe UI"', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', '"Cascadia Mono"', 'Consolas', 'monospace'],
       },
-      boxShadow: {
-        card: '0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06)',
+      borderRadius: {
+        DEFAULT: '6px',
       },
     },
   },
