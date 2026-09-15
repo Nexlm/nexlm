@@ -24,16 +24,16 @@ export default function CreateOrderPage() {
 
   const wallet = useApi(() => api.get('/wallet'), []);
   const accounts = useApi(() => api.get('/users/me/payment-accounts').then((r) => r.items), []);
+  const market = useApi(() => api.get('/orders', { type: 'SELL', pageSize: 1 }), []);
   const savedMethods = new Set((accounts.data ?? []).map((a) => a.method));
+  const referenceRate = market.data?.items?.[0]?.ngnRate;
 
   const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
   function toggleMethod(value) {
     setForm((f) => ({
       ...f,
-      paymentMethods: f.paymentMethods.includes(value)
-        ? f.paymentMethods.filter((m) => m !== value)
-        : [...f.paymentMethods, value],
+      paymentMethods: f.paymentMethods.includes(value) ? f.paymentMethods.filter((m) => m !== value) : [...f.paymentMethods, value],
     }));
   }
 
@@ -59,17 +59,18 @@ export default function CreateOrderPage() {
   const isSell = type === 'SELL';
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="page-title">Post an order</h1>
-        <p className="mt-1 text-sm text-slate-500">Orders stay on the market for 30 minutes or until matched.</p>
-      </div>
+    <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1fr_20rem]">
+      <form onSubmit={handleSubmit} className="space-y-7" noValidate>
+        <div>
+          <p className="eyebrow">New order</p>
+          <h1 className="page-title mt-3">Post an order</h1>
+          <p className="mt-2 text-soft">Orders stay on the market for 30 minutes or until matched.</p>
+        </div>
 
-      <form onSubmit={handleSubmit} className="card space-y-6 p-6" noValidate>
         <Tabs
           tabs={[
-            { value: 'SELL', label: 'I want to sell XLM', activeClass: 'bg-rose-600 text-white shadow-sm' },
-            { value: 'BUY', label: 'I want to buy XLM', activeClass: 'bg-emerald-600 text-white shadow-sm' },
+            { value: 'SELL', label: 'I want to sell XLM', activeClass: 'bg-ember text-ink' },
+            { value: 'BUY', label: 'I want to buy XLM', activeClass: 'bg-leaf text-ink' },
           ]}
           value={type}
           onChange={(v) => {
@@ -78,16 +79,9 @@ export default function CreateOrderPage() {
           }}
         />
 
-        {isSell && wallet.data && (
-          <Alert tone="info">
-            Available: <strong>{formatXlm(wallet.data.withdrawable)}</strong>. Each sell order reserves the amount plus{' '}
-            {ESCROW_OVERHEAD} XLM escrow overhead (returned when the trade closes).
-          </Alert>
-        )}
-
         {formError && <Alert tone="error">{formError.message}</Alert>}
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <Input
             label="Amount"
             inputMode="decimal"
@@ -100,17 +94,13 @@ export default function CreateOrderPage() {
           <Input
             label="Your price"
             inputMode="decimal"
-            placeholder="520.00"
+            placeholder={referenceRate ? String(referenceRate) : '237.50'}
             suffix="₦/XLM"
             value={form.ngnRate}
             onChange={update('ngnRate')}
             error={errors.ngnRate}
+            hint={referenceRate ? `Best ask right now: ${formatNgn(referenceRate)}` : undefined}
           />
-        </div>
-
-        <div className="rounded-lg bg-slate-50 p-4 text-sm">
-          <span className="text-slate-500">{isSell ? 'You will receive' : 'You will pay'}</span>
-          <p className="text-2xl font-semibold text-slate-900">{formatNgn(total)}</p>
         </div>
 
         <fieldset>
@@ -126,8 +116,8 @@ export default function CreateOrderPage() {
                   onClick={() => toggleMethod(m.value)}
                   aria-pressed={active}
                   className={clsx(
-                    'rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
-                    active ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-slate-300 text-slate-600 hover:bg-slate-50',
+                    'rounded-full border px-3.5 py-2 text-sm font-medium transition-colors',
+                    active ? 'border-mint bg-mint/10 text-mint' : 'border-line text-soft hover:border-moss',
                     missing && 'border-dashed',
                   )}
                 >
@@ -136,11 +126,11 @@ export default function CreateOrderPage() {
               );
             })}
           </div>
-          {errors.paymentMethods && <p className="mt-1.5 text-xs text-rose-600">{errors.paymentMethods}</p>}
+          {errors.paymentMethods && <p className="mt-1.5 text-xs text-ember">{errors.paymentMethods}</p>}
           {isSell && (
-            <p className="mt-2 text-xs text-slate-500">
-              Buyers pay into your saved payout accounts. Dashed methods have no account yet —{' '}
-              <Link to="/settings" className="font-medium text-brand-700 hover:underline">
+            <p className="mt-2 text-xs text-moss">
+              Dashed methods have no payout account yet —{' '}
+              <Link to="/settings" className="link">
                 add one in settings
               </Link>
               .
@@ -157,15 +147,44 @@ export default function CreateOrderPage() {
           error={errors.terms}
         />
 
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => navigate(-1)}>
-            Cancel
-          </Button>
-          <Button type="submit" variant={isSell ? 'danger' : 'success'} loading={loading}>
+        <div className="flex gap-2">
+          <Button type="submit" size="lg" variant={isSell ? 'danger' : 'success'} loading={loading}>
             Post {isSell ? 'sell' : 'buy'} order
+          </Button>
+          <Button size="lg" variant="ghost" onClick={() => navigate(-1)}>
+            Cancel
           </Button>
         </div>
       </form>
+
+      <aside className="lg:pt-24">
+        <div className="card p-6 lg:sticky lg:top-24">
+          <p className="table-head">{isSell ? 'You will receive' : 'You will pay'}</p>
+          <p className="mt-2 font-display text-4xl font-extrabold tracking-tight">{formatNgn(total)}</p>
+          <dl className="mt-6 border-t border-line text-sm">
+            <div className="flex justify-between border-b border-line py-3">
+              <dt className="text-moss">Amount</dt>
+              <dd className="num text-gold">{formatXlm(form.xlmAmount || 0)}</dd>
+            </div>
+            <div className="flex justify-between border-b border-line py-3">
+              <dt className="text-moss">Trading fee</dt>
+              <dd className="num">₦0.00</dd>
+            </div>
+            {isSell && (
+              <div className="flex justify-between border-b border-line py-3">
+                <dt className="text-moss">Escrow reserve</dt>
+                <dd className="num">{ESCROW_OVERHEAD} XLM · refunded</dd>
+              </div>
+            )}
+            {isSell && wallet.data && (
+              <div className="flex justify-between py-3">
+                <dt className="text-moss">Withdrawable</dt>
+                <dd className="num">{formatXlm(wallet.data.withdrawable)}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      </aside>
     </div>
   );
 }
