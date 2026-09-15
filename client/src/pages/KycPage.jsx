@@ -47,28 +47,25 @@ export default function KycPage() {
   const canSubmit = status.kycStatus === 'UNVERIFIED' || status.kycStatus === 'REJECTED';
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
+    <div className="mx-auto max-w-xl space-y-8">
       <div>
-        <h1 className="page-title">Identity verification</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Verify with your BVN or NIN to trade. We only keep the last 4 digits of your ID number.
-        </p>
+        <p className="eyebrow">Identity</p>
+        <h1 className="page-title mt-3">Verify with BVN or NIN</h1>
+        <p className="mt-2 text-soft">Required to trade Naira. We only keep the last 4 digits of your ID number.</p>
       </div>
 
       {result && (
-        <Alert tone={{ VERIFIED: 'success', PENDING: 'info', REJECTED: 'error', ERROR: 'error' }[result.status]}>
-          {result.message}
-        </Alert>
+        <Alert tone={{ VERIFIED: 'success', PENDING: 'info', REJECTED: 'error', ERROR: 'error' }[result.status]}>{result.message}</Alert>
       )}
 
       {status.kycStatus === 'VERIFIED' && (
-        <div className="card flex flex-col items-center p-8 text-center">
-          <ShieldCheck className="h-12 w-12 text-emerald-600" />
-          <p className="mt-3 text-lg font-semibold">You&apos;re verified</p>
-          <p className="mt-1 text-sm text-slate-500">
-            {status.kycFullName} · {status.kycIdType} ending in {status.kycIdLast4}
+        <div className="card flex flex-col items-center p-10 text-center">
+          <ShieldCheck className="h-12 w-12 text-mint" />
+          <p className="mt-4 font-display text-2xl font-extrabold">You&apos;re verified</p>
+          <p className="mt-1 font-mono text-xs text-moss">
+            {status.kycFullName} · {status.kycIdType} ···{status.kycIdLast4}
           </p>
-          <Link to="/" className="mt-5 text-sm font-medium text-brand-700 hover:underline">
+          <Link to="/" className="link mt-6 text-sm">
             Start trading →
           </Link>
         </div>
@@ -76,13 +73,12 @@ export default function KycPage() {
 
       {status.kycStatus === 'PENDING' && (
         <Alert tone="info" title="Under review">
-          Submitted {formatDateTime(status.kycSubmittedAt)} for {status.kycIdType} ending in {status.kycIdLast4}. We&apos;ll
-          update your account once it&apos;s reviewed.
+          Submitted {formatDateTime(status.kycSubmittedAt)} for {status.kycIdType} ending in {status.kycIdLast4}.
         </Alert>
       )}
 
       {canSubmit && (
-        <form onSubmit={submit} className="card space-y-4 p-6" noValidate>
+        <form onSubmit={submit} className="card space-y-5 p-6" noValidate>
           {status.kycStatus === 'REJECTED' && !result && (
             <Alert tone="error">Your last attempt didn&apos;t match. Enter your details exactly as they appear on your ID.</Alert>
           )}
@@ -100,12 +96,12 @@ export default function KycPage() {
                   aria-pressed={form.idType === opt.value}
                   onClick={() => setForm((f) => ({ ...f, idType: opt.value }))}
                   className={clsx(
-                    'rounded-lg border p-3 text-left',
-                    form.idType === opt.value ? 'border-brand-600 bg-brand-50' : 'border-slate-300 hover:bg-slate-50',
+                    'rounded border p-4 text-left transition-colors',
+                    form.idType === opt.value ? 'border-mint bg-mint/[0.07]' : 'border-line hover:border-moss',
                   )}
                 >
-                  <p className="text-sm font-semibold">{opt.label}</p>
-                  <p className="text-xs text-slate-500">{opt.hint}</p>
+                  <p className="font-display text-lg font-bold">{opt.label}</p>
+                  <p className="text-xs text-moss">{opt.hint}</p>
                 </button>
               ))}
             </div>
@@ -120,18 +116,16 @@ export default function KycPage() {
             onChange={update('idNumber')}
             error={errors.idNumber}
           />
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-2">
             <Input label="First name" autoComplete="given-name" value={form.firstName} onChange={update('firstName')} error={errors.firstName} />
             <Input label="Last name" autoComplete="family-name" value={form.lastName} onChange={update('lastName')} error={errors.lastName} />
           </div>
           <Input label="Date of birth" type="date" value={form.dateOfBirth} onChange={update('dateOfBirth')} error={errors.dateOfBirth} />
 
-          <Button type="submit" className="w-full" loading={submitting}>
+          <Button type="submit" size="lg" className="w-full" loading={submitting}>
             Verify identity
           </Button>
-          <p className="text-center text-xs text-slate-500">
-            Checked against NIBSS/NIMC records through our KYC partner. Your full ID number is never stored.
-          </p>
+          <p className="text-center text-xs text-moss">Checked against NIBSS/NIMC records. Your full ID number is never stored.</p>
         </form>
       )}
     </div>
