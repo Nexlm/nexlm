@@ -42,11 +42,11 @@ export default function MyOrdersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between gap-4">
+    <div className="space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="page-title">My Orders</h1>
-          <p className="mt-1 text-sm text-slate-500">Orders you&apos;ve posted on the P2P market.</p>
+          <p className="eyebrow">Your offers</p>
+          <h1 className="page-title mt-3">My orders</h1>
         </div>
         <Link to="/orders/new">
           <Button>
@@ -78,33 +78,33 @@ export default function MyOrdersPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              <thead className="table-head border-b border-line text-left">
                 <tr>
-                  <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3">Amount</th>
-                  <th className="px-4 py-3">Price</th>
-                  <th className="px-4 py-3">Payment</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Expires</th>
-                  <th className="px-4 py-3" />
+                  <th className="px-5 py-3 font-semibold">Type</th>
+                  <th className="px-5 py-3 font-semibold">Amount</th>
+                  <th className="px-5 py-3 font-semibold">Price</th>
+                  <th className="px-5 py-3 font-semibold">Payment</th>
+                  <th className="px-5 py-3 font-semibold">Status</th>
+                  <th className="px-5 py-3 font-semibold">Expires</th>
+                  <th className="px-5 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-line">
                 {data.items.map((order) => (
-                  <tr key={order.id}>
-                    <td className="px-4 py-3">
-                      <Badge tone={order.type === 'SELL' ? 'red' : 'green'}>{order.type === 'SELL' ? 'Sell' : 'Buy'}</Badge>
+                  <tr key={order.id} className="hover:bg-raised/50">
+                    <td className="px-5 py-4">
+                      <Badge tone={order.type === 'SELL' ? 'ember' : 'mint'}>{order.type === 'SELL' ? 'Sell' : 'Buy'}</Badge>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 font-medium">{formatXlm(order.xlmAmount)}</td>
-                    <td className="whitespace-nowrap px-4 py-3">{formatNgn(order.ngnRate)}</td>
-                    <td className="px-4 py-3">
+                    <td className="num whitespace-nowrap px-5 py-4 font-semibold">{formatXlm(order.xlmAmount)}</td>
+                    <td className="whitespace-nowrap px-5 py-4 font-display text-base font-bold">{formatNgn(order.ngnRate)}</td>
+                    <td className="px-5 py-4">
                       <PaymentMethodChips methods={order.paymentMethods} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4">
                       <StatusBadge map={ORDER_STATUS} status={order.status} />
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-slate-500">{formatDateTime(order.expiresAt)}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="num whitespace-nowrap px-5 py-4 text-xs text-moss">{formatDateTime(order.expiresAt)}</td>
+                    <td className="px-5 py-4 text-right">
                       {order.status === 'ACTIVE' && (
                         <Button variant="secondary" size="sm" loading={cancelling === order.id} onClick={() => cancel(order.id)}>
                           Cancel
