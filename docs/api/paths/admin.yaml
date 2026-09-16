@@ -1,0 +1,204 @@
+# Admin paths, referenced from ../openapi.yaml. Every one requires role ADMIN.
+overview:
+  get:
+    tags: [Admin]
+    summary: Operations dashboard
+    responses:
+      '200':
+        description: Counts for the last 30 days
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                users:
+                  type: object
+                  properties:
+                    total: { type: integer }
+                    verified: { type: integer }
+                    pendingKyc: { type: integer }
+                trades:
+                  type: object
+                  properties:
+                    active: { type: integer }
+                    completed30d: { type: integer }
+                    cancelled30d: { type: integer }
+                    completionRate30d:
+                      type: number
+                      nullable: true
+                      description: Null until a trade closes.
+                volume30d:
+                  type: object
+                  properties:
+                    ngn: { $ref: '../openapi.yaml#/components/schemas/NgnAmount' }
+                    xlm: { $ref: '../openapi.yaml#/components/schemas/XlmAmount' }
+                activeOrders: { type: integer }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+      '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+
+users:
+  get:
+    tags: [Admin]
+    summary: Search accounts
+    description: Matches email, display name or an exact Stellar address. Never returns secrets.
+    parameters:
+      - name: q
+        in: query
+        schema: { type: string, maxLength: 100 }
+      - name: status
+        in: query
+        schema: { type: string, enum: [ACTIVE, SUSPENDED, BANNED] }
+      - name: kycStatus
+        in: query
+        schema: { type: string, enum: [UNVERIFIED, PENDING, VERIFIED, REJECTED] }
+      - { $ref: '../openapi.yaml#/components/parameters/Page' }
+      - { $ref: '../openapi.yaml#/components/parameters/PageSize' }
+    responses:
+      '200':
+        description: A page of accounts, newest first
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items: { $ref: '../openapi.yaml#/components/schemas/User' }
+                pagination: { $ref: '../openapi.yaml#/components/schemas/Pagination' }
+      '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+
+userById:
+  get:
+    tags: [Admin]
+    summary: One account with its recent trades and payout accounts
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Id' }
+    responses:
+      '200':
+        description: Account detail
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: '../openapi.yaml#/components/schemas/User' }
+                - type: object
+                  properties:
+                    kycFullName: { type: string, nullable: true }
+                    kycReference: { type: string, nullable: true, description: Provider job id, or null for manual review. }
+                    kycSubmittedAt: { type: string, format: date-time, nullable: true }
+                    kycReviewedAt: { type: string, format: date-time, nullable: true }
+                    recentTrades:
+                      type: array
+                      items: { $ref: '../openapi.yaml#/components/schemas/Trade' }
+                    paymentAccounts:
+                      type: array
+                      items: { $ref: '../openapi.yaml#/components/schemas/PaymentAccount' }
+      '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+      '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
+
+userStatus:
+  patch:
+    tags: [Admin]
+    summary: Suspend, ban or reactivate an account
+    description: |
+      Suspending or banning also cancels the trader's active offers. An admin cannot change their own
+      status, and admin accounts cannot be restricted here.
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Id' }
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [status]
+            properties:
+              status: { type: string, enum: [ACTIVE, SUSPENDED, BANNED] }
+    responses:
+      '200':
+        description: Updated account
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/User' }
+      '400':
+        description: Your own account, or another admin
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+      '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
+
+kycDecision:
+  post:
+    tags: [Admin]
+    summary: Approve or reject a pending verification
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Id' }
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [decision]
+            properties:
+              decision: { type: string, enum: [APPROVE, REJECT] }
+    responses:
+      '200':
+        description: Decision recorded
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/User' }
+      '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+      '409':
+        description: Nothing pending for this user
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+
+trades:
+  get:
+    tags: [Admin]
+    summary: Every trade, most recently updated first
+    parameters:
+      - name: status
+        in: query
+        schema: { $ref: '../openapi.yaml#/components/schemas/TradeStatus' }
+      - { $ref: '../openapi.yaml#/components/parameters/Page' }
+      - { $ref: '../openapi.yaml#/components/parameters/PageSize' }
+    responses:
+      '200':
+        description: A page of trades
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items: { $ref: '../openapi.yaml#/components/schemas/Trade' }
+                pagination: { $ref: '../openapi.yaml#/components/schemas/Pagination' }
+      '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+
+tradeById:
+  get:
+    tags: [Admin]
+    summary: One trade with its chat, for dispute review
+    description: Read-only. Admins can see any trade room but cannot act in it.
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Id' }
+    responses:
+      '200':
+        description: Trade detail plus messages
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: '../openapi.yaml#/components/schemas/TradeDetails' }
+                - type: object
+                  properties:
+                    messages:
+                      type: array
+                      items: { $ref: '../openapi.yaml#/components/schemas/Message' }
+      '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+      '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
