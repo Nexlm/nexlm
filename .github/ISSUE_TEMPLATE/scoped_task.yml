@@ -1,0 +1,58 @@
+name: Scoped task (maintainers)
+description: A self-contained task sized for a new contributor to pick up
+title: "[task] "
+labels: [good first issue]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Maintainers use this template to post sprint work. A good scoped task names the files to
+        change, the expected behaviour, and how to prove it — so a contributor can start without
+        asking anything first.
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What should be true when this is done?
+    validations:
+      required: true
+
+  - type: textarea
+    id: where
+    attributes:
+      label: Where to work
+      description: Files or directories to change, and anything to leave alone.
+      value: |
+        - `server/src/...`
+        - `client/src/...`
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance checks
+      value: |
+        - [ ] Unit test covering the new behaviour
+        - [ ] `npm test` passes
+        - [ ] No change to escrow or trade state rules
+    validations:
+      required: true
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      options:
+        - S — an hour or two
+        - M — a day
+        - L — a few days, needs design discussion
+    validations:
+      required: true
+
+  - type: input
+    id: mentor
+    attributes:
+      label: Mentor
+      description: Who to ask when stuck.
