@@ -1,0 +1,171 @@
+# Wallet paths, referenced from ../openapi.yaml
+summary:
+  get:
+    tags: [Wallet]
+    summary: Balance, reserves and what can be withdrawn
+    description: |
+      `available` is the balance minus the Stellar minimum reserve, selling liabilities and a fee
+      buffer. `withdrawable` takes off the XLM committed to active sell orders as well.
+    responses:
+      '200':
+        description: Wallet summary
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                publicKey: { type: string, pattern: '^G[A-Z2-7]{55}$' }
+                network: { type: string, enum: [testnet, public] }
+                explorerUrl: { type: string }
+                funded:
+                  type: boolean
+                  description: False until the account exists on Stellar (needs at least 1 XLM).
+                balance: { $ref: '../openapi.yaml#/components/schemas/XlmAmount' }
+                available: { $ref: '../openapi.yaml#/components/schemas/XlmAmount' }
+                committedToOrders: { $ref: '../openapi.yaml#/components/schemas/XlmAmount' }
+                withdrawable: { $ref: '../openapi.yaml#/components/schemas/XlmAmount' }
+                minimumBalance: { $ref: '../openapi.yaml#/components/schemas/XlmAmount' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+      '503':
+        description: '`HORIZON_UNAVAILABLE` — Stellar could not be reached'
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+
+deposit:
+  get:
+    tags: [Wallet]
+    summary: Deposit address and QR code
+    responses:
+      '200':
+        description: Where to send XLM
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                publicKey: { type: string }
+                network: { type: string, enum: [testnet, public] }
+                qrCode: { type: string, description: PNG data URI of the address. }
+                memoRequired: { type: boolean }
+                warning: { type: string, description: Shown to the trader verbatim. }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+
+activity:
+  get:
+    tags: [Wallet]
+    summary: On-chain payment history, newest first
+    description: Native XLM payments, account creations and escrow merges. Other operations are hidden.
+    parameters:
+      - name: cursor
+        in: query
+        description: Horizon paging token from the previous page.
+        schema: { type: string, maxLength: 64 }
+    responses:
+      '200':
+        description: A page of activity
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      kind: { type: string, enum: [payment, create_account, account_merge] }
+                      direction: { type: string, enum: [in, out] }
+                      amount: { type: string, nullable: true }
+                      counterparty: { type: string }
+                      txHash: { type: string }
+                      explorerUrl: { type: string }
+                      createdAt: { type: string, format: date-time }
+                nextCursor: { type: string, nullable: true }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+
+transactions:
+  get:
+    tags: [Wallet]
+    summary: Nexlm's own record of escrow moves and withdrawals
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Page' }
+      - { $ref: '../openapi.yaml#/components/parameters/PageSize' }
+    responses:
+      '200':
+        description: A page of recorded transactions
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      type: { type: string, enum: [ESCROW_LOCK, ESCROW_RELEASE, ESCROW_REFUND, WITHDRAWAL] }
+                      xlmAmount: { $ref: '../openapi.yaml#/components/schemas/XlmAmount' }
+                      counterparty: { type: string }
+                      stellarTxHash: { type: string }
+                      explorerUrl: { type: string }
+                      tradeId: { type: string, nullable: true }
+                      createdAt: { type: string, format: date-time }
+                pagination: { $ref: '../openapi.yaml#/components/schemas/Pagination' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+
+withdraw:
+  post:
+    tags: [Wallet]
+    summary: Send XLM to an external address
+    description: |
+      Requires a verified email. Rate limited to 10 an hour per user. A destination that does not
+      exist yet is created, which needs at least 1 XLM. Irreversible once submitted.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [destination, amount]
+            properties:
+              destination: { type: string, pattern: '^G[A-Z2-7]{55}$' }
+              amount: { $ref: '../openapi.yaml#/components/schemas/XlmAmount' }
+              memo:
+                type: string
+                maxLength: 28
+                description: Up to 28 bytes. Exchanges usually require one.
+    responses:
+      '201':
+        description: Submitted to Stellar
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                txHash: { type: string }
+                explorerUrl: { type: string }
+      '400':
+        description: Invalid address, own wallet, or under 1 XLM to a new account
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+      '403':
+        description: '`EMAIL_NOT_VERIFIED`'
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '422':
+        description: '`INSUFFICIENT_BALANCE` — `details.withdrawable` gives the limit'
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '429': { $ref: '../openapi.yaml#/components/responses/RateLimited' }
+      '502':
+        description: '`STELLAR_TX_FAILED` — nothing left the wallet'
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
