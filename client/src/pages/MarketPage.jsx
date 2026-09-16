@@ -1,6 +1,6 @@
 import { Plus, RefreshCw, Store } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { OrderRow } from '../components/orders/OrderRow.jsx';
 import { TradeModal } from '../components/orders/TradeModal.jsx';
 import { Button } from '../components/ui/Button.jsx';
@@ -24,12 +24,22 @@ const SIDE_TABS = [
 
 export default function MarketPage() {
   const user = useAuthStore((s) => s.user);
-  const [side, setSide] = useState('buy');
-  const [method, setMethod] = useState('');
-  const [amount, setAmount] = useState('');
-  const [page, setPage] = useState(1);
+  // Filters live in the URL so a market view can be bookmarked or shared.
+  const [params, setParams] = useSearchParams();
+  const side = params.get('side') === 'sell' ? 'sell' : 'buy';
+  const method = params.get('method') ?? '';
+  const page = Math.max(1, Number(params.get('page') ?? 1) || 1);
+  const [amount, setAmount] = useState(params.get('min') ?? '');
   const [selected, setSelected] = useState(null);
   const debouncedAmount = useDebounce(amount);
+
+  const setParam = (key, value) => {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    if (key !== 'page') next.delete('page');
+    setParams(next, { replace: true });
+  };
 
   // Buyers browse sell orders; sellers browse buy orders.
   const type = side === 'buy' ? 'SELL' : 'BUY';
@@ -56,10 +66,6 @@ export default function MarketPage() {
   useSocketEvent('order:removed', scheduleRefresh);
   useLiveRefresh(() => reload({ silent: true }), 10000);
 
-  const changeFilter = (setter) => (value) => {
-    setter(value);
-    setPage(1);
-  };
 
   const best = data?.items?.[0];
 
@@ -91,20 +97,23 @@ export default function MarketPage() {
 
       <div className="card overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-line p-4 lg:flex-row lg:items-center">
-          <Tabs tabs={SIDE_TABS} value={side} onChange={changeFilter(setSide)} />
+          <Tabs tabs={SIDE_TABS} value={side} onChange={(value) => setParam('side', value === 'buy' ? '' : value)} />
           <div className="grid flex-1 grid-cols-2 gap-3 lg:ml-3 lg:max-w-md">
             <Input
               placeholder="Min. amount"
               inputMode="decimal"
               value={amount}
-              onChange={(e) => changeFilter(setAmount)(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                setParam('min', e.target.value);
+              }}
               suffix="XLM"
               aria-label="Minimum XLM amount"
             />
             <Select
               aria-label="Payment method"
               value={method}
-              onChange={(e) => changeFilter(setMethod)(e.target.value)}
+              onChange={(e) => setParam('method', e.target.value)}
               options={[{ value: '', label: 'All payment methods' }, ...PAYMENT_METHODS]}
             />
           </div>
@@ -139,7 +148,7 @@ export default function MarketPage() {
           ))
         )}
 
-        <Pagination pagination={data?.pagination} onChange={setPage} />
+        <Pagination pagination={data?.pagination} onChange={(next) => setParam('page', String(next))} />
       </div>
 
       {selected && <TradeModal key={selected.id} order={selected} onClose={() => setSelected(null)} />}
