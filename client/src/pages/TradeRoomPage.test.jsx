@@ -67,6 +67,18 @@ describe('TradeRoomPage for the buyer', () => {
     expect(screen.getAllByText(/375,000\.00/).length).toBeGreaterThan(0);
   });
 
+  it('lets support quote the trade id in one click', async () => {
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    renderRoom();
+    await screen.findByText(/Buying from tunde/);
+
+    // Payment details carry copy buttons too, so scope to the trade id line.
+    const header = within(screen.getByText('trd_1').closest('p'));
+    await userEvent.click(header.getByRole('button', { name: 'Copy' }));
+    expect(writeText).toHaveBeenCalledWith('trd_1');
+  });
+
   it('shows the payment window countdown', async () => {
     renderRoom();
     expect(await screen.findByRole('timer')).toBeInTheDocument();
