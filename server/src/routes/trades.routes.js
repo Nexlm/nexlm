@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { requireAuth } from '../middleware/auth.js';
+import { chatLimiter } from '../middleware/rateLimit.js';
 import { requireTradingEligibility } from '../middleware/requireTrading.js';
 import { singleImage } from '../middleware/upload.js';
 import { validate } from '../middleware/validate.js';
@@ -58,6 +59,7 @@ router.get(
 
 router.post(
   '/:id/messages',
+  chatLimiter,
   singleImage('image'),
   validate({ params: idParams, body: sendMessageBody }),
   asyncHandler(async (req, res) => {
