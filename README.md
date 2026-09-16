@@ -133,7 +133,8 @@ client/
 
 ## API overview
 
-All routes are under `/api`. Full reference: [nexlm-docs](https://github.com/Nexlm/nexlm-docs).
+All routes are under `/api`. Machine-readable reference: [docs/api/openapi.yaml](docs/api/openapi.yaml)
+(kept in step with the router by a test). Narrative guides: [nexlm-docs](https://github.com/Nexlm/nexlm-docs).
 
 | Area | Endpoints |
 | --- | --- |
