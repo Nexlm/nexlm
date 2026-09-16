@@ -58,6 +58,7 @@ paths:
                 type: object
                 properties:
                   status: { type: string, examples: [ok] }
+                  version: { type: string, description: The build answering this request. }
                   network: { type: string, enum: [testnet, public] }
                   runtime: { type: string, enum: [server, serverless] }
                   realtime:
