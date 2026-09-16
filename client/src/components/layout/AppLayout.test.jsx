@@ -31,6 +31,13 @@ describe('AppLayout', () => {
     expect(screen.getByText(/Nexlm never holds your Naira/)).toBeInTheDocument();
   });
 
+  it('lets keyboard users skip the navigation', () => {
+    renderApp();
+    const skip = screen.getByRole('link', { name: 'Skip to content' });
+    expect(skip).toHaveAttribute('href', '#main');
+    expect(document.querySelector('main')).toHaveAttribute('id', 'main');
+  });
+
   it('shows verification nudges above the page', () => {
     useAuthStore.setState({ token: 'tok', user: { email: 'ada@x.ng', emailVerified: false, kycStatus: 'UNVERIFIED' } });
     renderApp();
