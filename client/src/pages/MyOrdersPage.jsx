@@ -1,6 +1,6 @@
 import { ListOrdered, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { PaymentMethodChips } from '../components/common/PaymentMethodChips.jsx';
 import { Badge, StatusBadge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
@@ -24,9 +24,19 @@ const STATUS_TABS = [
 
 export default function MyOrdersPage() {
   usePageTitle('My orders');
-  const [status, setStatus] = useState('');
-  const [page, setPage] = useState(1);
+  // Filters live in the URL, so "my expired offers" is a link you can keep.
+  const [params, setParams] = useSearchParams();
+  const status = STATUS_TABS.some((t) => t.value && t.value === params.get('status')) ? params.get('status') : '';
+  const page = Math.max(1, Number(params.get('page') ?? 1) || 1);
   const [cancelling, setCancelling] = useState(null);
+
+  const setParam = (key, value) => {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    if (key !== 'page') next.delete('page');
+    setParams(next, { replace: true });
+  };
 
   const { data, loading, error, reload } = useApi(() => api.get('/orders/mine', { status, page }), [status, page]);
 
@@ -61,10 +71,7 @@ export default function MyOrdersPage() {
         <Tabs
           tabs={STATUS_TABS}
           value={status}
-          onChange={(v) => {
-            setStatus(v);
-            setPage(1);
-          }}
+          onChange={(v) => setParam('status', v)}
         />
       </div>
 
@@ -119,7 +126,7 @@ export default function MyOrdersPage() {
             </table>
           </div>
         )}
-        <Pagination pagination={data?.pagination} onChange={setPage} />
+        <Pagination pagination={data?.pagination} onChange={(next) => setParam('page', String(next))} />
       </div>
     </div>
   );
