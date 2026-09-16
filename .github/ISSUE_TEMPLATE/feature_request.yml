@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest a change to how Nexlm works
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What is hard or risky for a trader today? Describe the situation, not the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would build
+    validations:
+      required: true
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Roadmap phase
+      description: See the roadmap in the README.
+      options:
+        - Phase 1 — MVP gap
+        - Phase 2 — ratings, disputes, 2FA, notifications
+        - Phase 3 — partial fills, live pricing, referrals, mobile
+        - Not on the roadmap yet
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: money-safety
+    attributes:
+      label: Does this touch money?
+      options:
+        - label: This changes escrow, balances, trade state or payouts (needs extra review — see CONTRIBUTING.md)
