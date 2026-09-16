@@ -1,0 +1,192 @@
+# Auth paths, referenced from ../openapi.yaml
+register:
+  post:
+    tags: [Auth]
+    summary: Create an account and a Stellar wallet
+    description: |
+      Generates a Stellar keypair for the user, encrypts the seed and — on testnet — funds it with
+      Friendbot. A verification email is sent; an unverified account can browse but not trade.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password, displayName]
+            properties:
+              email: { type: string, format: email }
+              password:
+                type: string
+                minLength: 8
+                description: At least one letter and one number.
+              displayName:
+                type: string
+                minLength: 3
+                maxLength: 24
+                pattern: '^[a-zA-Z0-9_]+$'
+                description: Shown to other traders.
+    responses:
+      '201':
+        description: Account created
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Session' }
+      '400': { $ref: '../openapi.yaml#/components/responses/ValidationError' }
+      '409':
+        description: Email or display name already taken
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '429': { $ref: '../openapi.yaml#/components/responses/RateLimited' }
+
+login:
+  post:
+    tags: [Auth]
+    summary: Start a session
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password]
+            properties:
+              email: { type: string, format: email }
+              password: { type: string }
+    responses:
+      '200':
+        description: Signed in
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Session' }
+      '401':
+        description: INVALID_CREDENTIALS — identical for a wrong password and an unknown email
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+      '429': { $ref: '../openapi.yaml#/components/responses/RateLimited' }
+
+me:
+  get:
+    tags: [Auth]
+    summary: The user behind the current token
+    responses:
+      '200':
+        description: Session user
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user: { $ref: '../openapi.yaml#/components/schemas/User' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+
+verifyEmail:
+  post:
+    tags: [Auth]
+    summary: Confirm an email address
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token]
+            properties:
+              token: { type: string, pattern: '^[a-f0-9]{64}$' }
+    responses:
+      '200':
+        description: Verified
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user: { $ref: '../openapi.yaml#/components/schemas/User' }
+      '400':
+        description: Link already used or invalid
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+
+resendVerification:
+  post:
+    tags: [Auth]
+    summary: Send a fresh verification email
+    responses:
+      '200': { description: Sent }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+      '409':
+        description: Email already verified
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+
+forgotPassword:
+  post:
+    tags: [Auth]
+    summary: Request a password reset link
+    description: Always answers 200, so the endpoint cannot be used to discover registered emails.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email]
+            properties:
+              email: { type: string, format: email }
+    responses:
+      '200': { description: Accepted }
+      '429': { $ref: '../openapi.yaml#/components/responses/RateLimited' }
+
+resetPassword:
+  post:
+    tags: [Auth]
+    summary: Set a new password with a reset token
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token, password]
+            properties:
+              token: { type: string, pattern: '^[a-f0-9]{64}$' }
+              password: { type: string, minLength: 8 }
+    responses:
+      '200': { description: Password changed }
+      '400':
+        description: Link invalid or expired — reset links last one hour
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+
+changePassword:
+  post:
+    tags: [Auth]
+    summary: Change the password of the signed-in user
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [currentPassword, newPassword]
+            properties:
+              currentPassword: { type: string }
+              newPassword: { type: string, minLength: 8 }
+    responses:
+      '200': { description: Password changed }
+      '400':
+        description: Current password incorrect, or the new one matches the old
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
