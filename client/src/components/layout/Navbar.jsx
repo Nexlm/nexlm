@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore, useIsAdmin } from '../../store/authStore.js';
 import { Avatar } from '../common/TraderBadge.jsx';
+import { ConnectionStatus } from './ConnectionStatus.jsx';
 
 const linkClass = ({ isActive }) =>
   clsx(
@@ -62,8 +63,9 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
-          <span className="mr-2 hidden items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-moss lg:flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-mint shadow-[0_0_0_3px_rgba(63,208,138,0.18)]" /> Stellar testnet
+          <span className="mr-2 hidden items-center gap-3 lg:flex">
+            <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-moss">Stellar testnet</span>
+            {user && <ConnectionStatus />}
           </span>
           {user ? (
             <>
