@@ -6,8 +6,10 @@ import { Alert } from '../../components/ui/Feedback.jsx';
 import { Input } from '../../components/ui/Field.jsx';
 import { api } from '../../lib/api.js';
 import { fieldErrors } from '../../lib/forms.js';
+import { usePageTitle } from '../../hooks/usePageTitle.js';
 
 export default function ResetPasswordPage() {
+  usePageTitle('Choose a new password');
   const [params] = useSearchParams();
   const token = params.get('token') ?? '';
   const [password, setPassword] = useState('');

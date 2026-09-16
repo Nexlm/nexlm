@@ -4,8 +4,10 @@ import { AuthLayout } from '../../components/layout/AppLayout.jsx';
 import { Alert, Spinner } from '../../components/ui/Feedback.jsx';
 import { api } from '../../lib/api.js';
 import { useAuthStore } from '../../store/authStore.js';
+import { usePageTitle } from '../../hooks/usePageTitle.js';
 
 export default function VerifyEmailPage() {
+  usePageTitle('Email verification');
   const [params] = useSearchParams();
   const token = params.get('token');
   const setUser = useAuthStore((s) => s.setUser);

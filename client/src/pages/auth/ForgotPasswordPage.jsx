@@ -5,8 +5,10 @@ import { Button } from '../../components/ui/Button.jsx';
 import { Alert } from '../../components/ui/Feedback.jsx';
 import { Input } from '../../components/ui/Field.jsx';
 import { api } from '../../lib/api.js';
+import { usePageTitle } from '../../hooks/usePageTitle.js';
 
 export default function ForgotPasswordPage() {
+  usePageTitle('Reset your password');
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState(null);

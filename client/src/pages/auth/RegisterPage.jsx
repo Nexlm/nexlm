@@ -7,8 +7,10 @@ import { Input } from '../../components/ui/Field.jsx';
 import { fieldErrors } from '../../lib/forms.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { toast } from '../../store/toastStore.js';
+import { usePageTitle } from '../../hooks/usePageTitle.js';
 
 export default function RegisterPage() {
+  usePageTitle('Create your account');
   const register = useAuthStore((s) => s.register);
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', displayName: '', password: '', confirm: '' });

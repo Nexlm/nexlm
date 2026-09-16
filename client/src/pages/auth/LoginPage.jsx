@@ -6,8 +6,10 @@ import { Alert } from '../../components/ui/Feedback.jsx';
 import { Input } from '../../components/ui/Field.jsx';
 import { safeRedirect } from '../../lib/forms.js';
 import { useAuthStore } from '../../store/authStore.js';
+import { usePageTitle } from '../../hooks/usePageTitle.js';
 
 export default function LoginPage() {
+  usePageTitle('Log in');
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
   const [params] = useSearchParams();
