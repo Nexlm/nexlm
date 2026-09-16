@@ -11,6 +11,7 @@ import { Button } from '../components/ui/Button.jsx';
 import { ErrorState, PageLoader } from '../components/ui/Feedback.jsx';
 import { Modal } from '../components/ui/Modal.jsx';
 import { useApi } from '../hooks/useApi.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 import { useLiveRefresh, useSocket, useSocketEvent } from '../hooks/useSocket.js';
 import { api } from '../lib/api.js';
 import { paymentMethodLabel, TRADE_STATUS } from '../lib/constants.js';
@@ -37,6 +38,8 @@ export default function TradeRoomPage() {
   const [confirming, setConfirming] = useState(null);
   const [busy, setBusy] = useState(false);
   const [received, setReceived] = useState(false);
+
+  usePageTitle(trade ? `${trade.role === 'BUYER' ? 'Buying' : 'Selling'} ${trade.xlmAmount} XLM` : 'Trade');
 
   useEffect(() => {
     if (!socket) return undefined;

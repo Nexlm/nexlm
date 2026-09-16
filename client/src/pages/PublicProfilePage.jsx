@@ -5,12 +5,15 @@ import { Avatar } from '../components/common/TraderBadge.jsx';
 import { Badge } from '../components/ui/Badge.jsx';
 import { EmptyState, ErrorState, PageLoader } from '../components/ui/Feedback.jsx';
 import { useApi } from '../hooks/useApi.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 import { api } from '../lib/api.js';
 import { formatNgn, formatPercent, formatXlm } from '../lib/format.js';
 
 export default function PublicProfilePage() {
   const { displayName } = useParams();
   const { data: profile, loading, error, reload } = useApi(() => api.get(`/users/${displayName}`), [displayName]);
+
+  usePageTitle(`${displayName} · trader`);
 
   if (loading && !profile) return <PageLoader />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
