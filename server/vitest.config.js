@@ -4,6 +4,13 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.test.js'],
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.js'],
+      // Process entry points and generated clients have nothing to assert.
+      exclude: ['src/index.js', 'src/lib/prisma.js'],
+      reporter: ['text-summary', 'html', 'lcov'],
+    },
     env: {
       NODE_ENV: 'test',
       DATABASE_URL: 'postgresql://test:test@localhost:5432/nexlm_test',
