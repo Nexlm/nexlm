@@ -157,6 +157,21 @@ paths:
   /api/kyc:
     $ref: './paths/users.yaml#/kyc'
 
+  /api/admin/overview:
+    $ref: './paths/admin.yaml#/overview'
+  /api/admin/users:
+    $ref: './paths/admin.yaml#/users'
+  /api/admin/users/{id}:
+    $ref: './paths/admin.yaml#/userById'
+  /api/admin/users/{id}/status:
+    $ref: './paths/admin.yaml#/userStatus'
+  /api/admin/kyc/{id}:
+    $ref: './paths/admin.yaml#/kycDecision'
+  /api/admin/trades:
+    $ref: './paths/admin.yaml#/trades'
+  /api/admin/trades/{id}:
+    $ref: './paths/admin.yaml#/tradeById'
+
 components:
   securitySchemes:
     bearerAuth:
