@@ -9,6 +9,7 @@ import { unauthorized } from './lib/errors.js';
 import { logger } from './lib/logger.js';
 import { prisma } from './lib/prisma.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { requestId } from './middleware/requestId.js';
 import apiRoutes from './routes/index.js';
 import { UPLOAD_DIR } from './services/upload.service.js';
 
@@ -18,6 +19,7 @@ export function createApp() {
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
 
+  app.use(requestId);
   // Uploaded images are embedded by the frontend on another origin.
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(cors({ origin: env.clientOrigins, credentials: true }));
