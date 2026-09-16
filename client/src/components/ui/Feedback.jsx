@@ -63,6 +63,7 @@ export function ErrorState({ error, onRetry }) {
       }
     >
       {error?.message ?? 'Something went wrong.'}
+      {error?.requestId && <p className="mono mt-1 text-moss">Reference {error.requestId}</p>}
     </Alert>
   );
 }
