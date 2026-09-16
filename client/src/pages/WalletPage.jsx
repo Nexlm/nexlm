@@ -11,6 +11,7 @@ import { useApi } from '../hooks/useApi.js';
 import { api } from '../lib/api.js';
 import { formatXlm } from '../lib/format.js';
 import { useAuthStore } from '../store/authStore.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 function Stat({ label, value, hint }) {
   return (
@@ -23,6 +24,7 @@ function Stat({ label, value, hint }) {
 }
 
 export default function WalletPage() {
+  usePageTitle('Wallet');
   const user = useAuthStore((s) => s.user);
   const [tab, setTab] = useState('deposit');
   const [refreshKey, setRefreshKey] = useState(0);

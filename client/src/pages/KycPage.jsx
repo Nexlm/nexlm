@@ -10,10 +10,12 @@ import { api } from '../lib/api.js';
 import { fieldErrors } from '../lib/forms.js';
 import { formatDateTime } from '../lib/format.js';
 import { useAuthStore } from '../store/authStore.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 const EMPTY = { idType: 'BVN', idNumber: '', firstName: '', lastName: '', dateOfBirth: '' };
 
 export default function KycPage() {
+  usePageTitle('Verify your identity');
   const refreshUser = useAuthStore((s) => s.refreshUser);
   const { data: status, loading, error, reload } = useApi(() => api.get('/kyc'), []);
   const [form, setForm] = useState(EMPTY);

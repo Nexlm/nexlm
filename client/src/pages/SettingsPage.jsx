@@ -13,6 +13,7 @@ import { fieldErrors } from '../lib/forms.js';
 import { formatDateTime, formatPercent } from '../lib/format.js';
 import { useAuthStore } from '../store/authStore.js';
 import { toast } from '../store/toastStore.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 function InfoRow({ label, children }) {
   return (
@@ -24,6 +25,7 @@ function InfoRow({ label, children }) {
 }
 
 export default function SettingsPage() {
+  usePageTitle('Settings');
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const [phone, setPhone] = useState(user?.phone ?? '');
