@@ -1,12 +1,14 @@
 import { API_URL as BASE_URL } from './config.js';
 
 export class ApiError extends Error {
-  constructor(status, code, message, details) {
+  constructor(status, code, message, details, requestId) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
     this.details = details;
+    // Set by the API on every response; quoting it in a report finds the log line.
+    this.requestId = requestId;
   }
 }
 
@@ -63,6 +65,7 @@ export async function request(path, { method = 'GET', body, query, signal } = {}
       error.code ?? 'HTTP_ERROR',
       error.message ?? `Request failed (${response.status})`,
       error.details,
+      response.headers?.get?.('X-Request-Id') ?? undefined,
     );
   }
 
