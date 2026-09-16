@@ -106,6 +106,18 @@ paths:
   /api/auth/change-password:
     $ref: './paths/auth.yaml#/changePassword'
 
+  /api/orders:
+    get:
+      $ref: './paths/orders.yaml#/list/get'
+    post:
+      $ref: './paths/orders.yaml#/create/post'
+  /api/orders/mine:
+    $ref: './paths/orders.yaml#/mine'
+  /api/orders/{id}:
+    $ref: './paths/orders.yaml#/byId'
+  /api/orders/{id}/cancel:
+    $ref: './paths/orders.yaml#/cancel'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -113,6 +125,21 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: 'Issued by /api/auth/login and /api/auth/register. Send as `Authorization: Bearer <token>`.'
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, maxLength: 64 }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: pageSize
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
 
   responses:
     Unauthorized:
@@ -240,6 +267,27 @@ components:
       pattern: '^\d+(\.\d{1,2})?$'
       examples: ['375000.00']
       description: Naira as a decimal string with 2 places.
+
+    Order:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [BUY, SELL] }
+        status: { type: string, enum: [ACTIVE, FILLED, CANCELLED, EXPIRED] }
+        xlmAmount: { $ref: '#/components/schemas/XlmAmount' }
+        ngnRate:
+          allOf: [{ $ref: '#/components/schemas/NgnAmount' }]
+          description: Naira per XLM.
+        paymentMethods:
+          type: array
+          items: { $ref: '#/components/schemas/PaymentMethod' }
+        terms: { type: string, nullable: true }
+        expiresAt:
+          type: string
+          format: date-time
+          description: Offers live for 30 minutes unless matched or cancelled.
+        createdAt: { type: string, format: date-time }
+        user: { $ref: '#/components/schemas/PublicUser' }
 
     PaymentMethod:
       type: string
