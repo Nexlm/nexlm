@@ -1,0 +1,176 @@
+openapi: 3.1.0
+info:
+  title: Nexlm API
+  version: 1.0.0
+  summary: Peer-to-peer XLM ↔ Naira exchange with on-chain Stellar escrow.
+  description: |
+    Every response is JSON. Errors share one shape:
+
+    ```json
+    { "error": { "code": "CONFLICT", "message": "Order already taken", "details": {} } }
+    ```
+
+    Clients branch on `code`, never on `message`. Every response carries an `X-Request-Id`
+    header; quote it when reporting a problem.
+
+    Amounts are decimal strings, never numbers: XLM to 7 places, Naira to 2. Parse them with a
+    decimal library, not a float.
+  license:
+    name: See repository
+    url: https://github.com/Nexlm/nexlm
+
+servers:
+  - url: https://nexlm-server.vercel.app
+    description: Hosted testnet deployment
+  - url: http://localhost:4000
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Health
+  - name: Auth
+  - name: Users
+  - name: KYC
+  - name: Wallet
+  - name: Orders
+  - name: Trades
+  - name: Admin
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness, and optionally the database
+      security: []
+      parameters:
+        - name: deep
+          in: query
+          description: Any value also checks that the database is reachable and migrated.
+          schema: { type: string }
+      responses:
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, examples: [ok] }
+                  network: { type: string, enum: [testnet, public] }
+                  runtime: { type: string, enum: [server, serverless] }
+                  realtime: { type: boolean, description: False when sockets are unavailable and the client must poll. }
+                  database: { type: string, enum: [ok, unreachable, 'migrations missing'] }
+        '503':
+          description: Degraded — the API is up but the database is not usable.
+
+  /api/cron/tick:
+    get:
+      tags: [Health]
+      summary: Run due background jobs (serverless deployments)
+      description: Called by Vercel Cron. Requires `Authorization: Bearer $CRON_SECRET`.
+      responses:
+        '200':
+          description: Jobs ran
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  ran:
+                    type: object
+                    properties:
+                      expiredOrders: { type: integer }
+                      autoCancelledTrades: { type: integer }
+                      reconciledTrades: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Issued by `/api/auth/login` and `/api/auth/register`. Send as `Authorization: Bearer <token>`.
+
+  responses:
+    Unauthorized:
+      description: Missing, expired or invalid session
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Authenticated but not allowed — includes `KYC_REQUIRED`, `EMAIL_NOT_VERIFIED` and `ACCOUNT_RESTRICTED`
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: No such resource
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Request failed validation; `details` lists the offending fields
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: The resource changed under you — refresh and retry
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              examples: [VALIDATION_ERROR, UNAUTHORIZED, KYC_REQUIRED, INSUFFICIENT_BALANCE, CONFLICT, STELLAR_TX_FAILED]
+            message: { type: string, description: Safe to show a trader. }
+            details:
+              description: Field errors for validation failures, or context for a business rule.
+              oneOf:
+                - type: array
+                  items:
+                    type: object
+                    properties:
+                      path: { type: string }
+                      message: { type: string }
+                - type: object
+
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer, minimum: 1 }
+        pageSize: { type: integer, minimum: 1, maximum: 100 }
+        total: { type: integer }
+        totalPages: { type: integer }
+        hasMore: { type: boolean }
+
+    XlmAmount:
+      type: string
+      pattern: '^\d+(\.\d{1,7})?$'
+      examples: ['250', '0.0000001']
+      description: XLM as a decimal string with up to 7 places.
+
+    NgnAmount:
+      type: string
+      pattern: '^\d+(\.\d{1,2})?$'
+      examples: ['375000.00']
+      description: Naira as a decimal string with 2 places.
+
+    PaymentMethod:
+      type: string
+      enum: [BANK_TRANSFER, OPAY, PALMPAY, KUDA, MONIEPOINT]
+
+    TradeStatus:
+      type: string
+      enum: [PENDING_ESCROW, ESCROW_LOCKED, PAID, RELEASING, REFUNDING, COMPLETED, CANCELLED]
