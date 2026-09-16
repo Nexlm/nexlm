@@ -44,6 +44,16 @@ describe('security headers', () => {
     expect(response.headers.get('x-content-type-options')).toBe('nosniff');
   });
 
+  it('returns a request id that can be quoted in a bug report', async () => {
+    const response = await server.call('/');
+    expect(response.headers.get('x-request-id')).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it('keeps an id set by a proxy', async () => {
+    const response = await server.call('/', { headers: { 'X-Request-Id': 'edge-7f3a91c4' } });
+    expect(response.headers.get('x-request-id')).toBe('edge-7f3a91c4');
+  });
+
   it('allows the configured client origin', async () => {
     const response = await server.call('/', { headers: { Origin: 'http://localhost:5173' } });
     expect(response.headers.get('access-control-allow-origin')).toBe('http://localhost:5173');
