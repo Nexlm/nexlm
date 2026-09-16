@@ -17,6 +17,7 @@ describe('GET /', () => {
     const { status, body } = await server.json('/');
     expect(status).toBe(200);
     expect(body).toMatchObject({ name: 'Nexlm API', status: 'ok', health: '/health' });
+    expect(body.version).toBeTruthy();
   });
 });
 
@@ -26,6 +27,11 @@ describe('GET /health', () => {
     expect(status).toBe(200);
     expect(body).toMatchObject({ status: 'ok', network: 'testnet', runtime: 'server', realtime: true });
     expect(Date.parse(body.time)).not.toBeNaN();
+  });
+
+  it('says which build answered', async () => {
+    const { body } = await server.json('/health');
+    expect(body.version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
   it('does not touch the database unless asked', async () => {
