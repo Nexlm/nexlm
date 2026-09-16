@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
@@ -12,6 +13,9 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { requestId } from './middleware/requestId.js';
 import apiRoutes from './routes/index.js';
 import { UPLOAD_DIR } from './services/upload.service.js';
+
+// Lets an operator confirm which build answered a request.
+const { version: VERSION } = createRequire(import.meta.url)('../package.json');
 
 export function createApp() {
   const app = express();
@@ -29,7 +33,7 @@ export function createApp() {
   app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d', index: false }));
 
   app.get('/', (_req, res) => {
-    res.json({ name: 'Nexlm API', status: 'ok', docs: 'https://github.com/Nexlm/nexlm-docs', health: '/health' });
+    res.json({ name: 'Nexlm API', status: 'ok', version: VERSION, docs: 'https://github.com/Nexlm/nexlm-docs', health: '/health' });
   });
 
   app.get(
@@ -37,6 +41,7 @@ export function createApp() {
     asyncHandler(async (req, res) => {
       const body = {
         status: 'ok',
+        version: VERSION,
         network: env.STELLAR_NETWORK,
         runtime: env.isServerless ? 'serverless' : 'server',
         realtime: !env.isServerless,
