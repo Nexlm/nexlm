@@ -8,6 +8,7 @@ import { TradeGuide } from '../components/trade/TradeGuide.jsx';
 import { TradeTimer } from '../components/trade/TradeTimer.jsx';
 import { StatusBadge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
+import { CopyButton } from '../components/ui/CopyButton.jsx';
 import { ErrorState, PageLoader } from '../components/ui/Feedback.jsx';
 import { Modal } from '../components/ui/Modal.jsx';
 import { useApi } from '../hooks/useApi.js';
@@ -105,8 +106,10 @@ export default function TradeRoomPage() {
           <h1 className="page-title mt-3">
             {isBuyer ? 'Buy' : 'Sell'} <span className="text-gold">{formatXlm(trade.xlmAmount)}</span>
           </h1>
-          <p className="mt-2 font-mono text-[11px] text-moss">
-            {trade.id} · opened {formatDateTime(trade.createdAt)}
+          <p className="mt-2 flex items-center gap-1 font-mono text-[11px] text-moss">
+            {trade.id}
+            <CopyButton value={trade.id} label="" className="px-1 py-0" />
+            <span>· opened {formatDateTime(trade.createdAt)}</span>
           </p>
         </div>
         <StatusBadge map={TRADE_STATUS} status={trade.status} />
