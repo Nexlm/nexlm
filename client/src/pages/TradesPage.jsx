@@ -1,6 +1,5 @@
 import { ArrowLeftRight, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { TraderBadge } from '../components/common/TraderBadge.jsx';
 import { Badge, StatusBadge } from '../components/ui/Badge.jsx';
 import { EmptyState, ErrorState, PageLoader } from '../components/ui/Feedback.jsx';
@@ -22,8 +21,18 @@ const SCOPES = [
 
 export default function TradesPage() {
   usePageTitle('My trades');
-  const [scope, setScope] = useState('active');
-  const [page, setPage] = useState(1);
+  // Scope and page live in the URL so a filtered list can be bookmarked.
+  const [params, setParams] = useSearchParams();
+  const scope = SCOPES.some((s) => s.value === params.get('scope')) ? params.get('scope') : 'active';
+  const page = Math.max(1, Number(params.get('page') ?? 1) || 1);
+
+  const setParam = (key, value) => {
+    const next = new URLSearchParams(params);
+    if (value && !(key === 'scope' && value === 'active')) next.set(key, value);
+    else next.delete(key);
+    if (key !== 'page') next.delete('page');
+    setParams(next, { replace: true });
+  };
   const { data, loading, error, reload } = useApi(() => api.get('/trades', { scope, page }), [scope, page]);
 
   useSocketEvent('trade:created', () => reload({ silent: true }));
@@ -41,10 +50,7 @@ export default function TradesPage() {
       <Tabs
         tabs={SCOPES}
         value={scope}
-        onChange={(v) => {
-          setScope(v);
-          setPage(1);
-        }}
+        onChange={(v) => setParam('scope', v)}
       />
 
       <div className="card overflow-hidden">
@@ -96,7 +102,7 @@ export default function TradesPage() {
             })}
           </ul>
         )}
-        <Pagination pagination={data?.pagination} onChange={setPage} />
+        <Pagination pagination={data?.pagination} onChange={(next) => setParam('page', String(next))} />
       </div>
     </div>
   );
