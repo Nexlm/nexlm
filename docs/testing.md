@@ -5,7 +5,15 @@ npm test                  # server + client
 npm test -w server        # API, services, Stellar, jobs
 npm test -w client        # components, hooks, pages
 npm run smoke -w server   # full lifecycle against Stellar testnet (needs a running API)
+
+npm run test:coverage -w server
+npm run test:coverage -w client
+npm run lint              # ESLint across both workspaces
 ```
+
+Coverage sits near 97% of statements in both workspaces. Treat a drop as a missing test rather than
+a number to chase: the parts that matter are `lib/amount.js`, `services/tradeRules.js`, the escrow
+builders and the trade service.
 
 ## What lives where
 
