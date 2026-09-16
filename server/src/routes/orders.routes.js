@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { requireAuth } from '../middleware/auth.js';
+import { orderLimiter } from '../middleware/rateLimit.js';
 import { requireTradingEligibility } from '../middleware/requireTrading.js';
 import { validate } from '../middleware/validate.js';
 import * as orders from '../services/order.service.js';
@@ -37,6 +38,7 @@ router.get(
 router.post(
   '/',
   requireAuth,
+  orderLimiter,
   requireTradingEligibility,
   validate({ body: createOrderBody }),
   asyncHandler(async (req, res) => {
