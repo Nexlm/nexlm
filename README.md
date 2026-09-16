@@ -149,8 +149,12 @@ Realtime events: `order:created`, `order:removed`, `trade:created`, `trade:updat
 
 ## Testing
 
-- **Unit tests** cover amount math, encryption, validators, trade state rules, reputation and file sniffing.
+- **Server unit tests** cover amount math, encryption, validators, trade state rules, services with the database mocked, escrow transaction shapes and the background jobs.
+- **Route tests** run the real Express app over HTTP and check status codes, validation, auth gates and error bodies.
+- **Client tests** render components, hooks and pages in jsdom with the API mocked.
 - **Smoke test** (`server/scripts/smoke-test.mjs`) runs a full lifecycle on Stellar testnet: registration, escrow lock, chat upload, release, cancel, timeout auto-refund and withdrawal.
+
+See [docs/testing.md](docs/testing.md) for conventions, and [docs/architecture.md](docs/architecture.md) for how the layers fit together.
 
 ## Roadmap
 
