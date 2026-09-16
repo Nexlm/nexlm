@@ -1,5 +1,8 @@
 # Contributing to Nexlm
 
+New here? Start with [docs/onboarding.md](docs/onboarding.md) — it takes you from a clone to a
+completed trade on testnet in about half an hour, then points at a first task.
+
 ## Workflow
 
 1. Branch from `main`: `feat/short-description`, `fix/short-description`.
