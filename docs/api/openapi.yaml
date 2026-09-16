@@ -118,6 +118,22 @@ paths:
   /api/orders/{id}/cancel:
     $ref: './paths/orders.yaml#/cancel'
 
+  /api/trades:
+    get:
+      $ref: './paths/trades.yaml#/list/get'
+    post:
+      $ref: './paths/trades.yaml#/open/post'
+  /api/trades/{id}:
+    $ref: './paths/trades.yaml#/byId'
+  /api/trades/{id}/paid:
+    $ref: './paths/trades.yaml#/markPaid'
+  /api/trades/{id}/release:
+    $ref: './paths/trades.yaml#/release'
+  /api/trades/{id}/cancel:
+    $ref: './paths/trades.yaml#/cancel'
+  /api/trades/{id}/messages:
+    $ref: './paths/trades.yaml#/messages'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -288,6 +304,88 @@ components:
           description: Offers live for 30 minutes unless matched or cancelled.
         createdAt: { type: string, format: date-time }
         user: { $ref: '#/components/schemas/PublicUser' }
+
+    Trade:
+      type: object
+      properties:
+        id: { type: string }
+        status: { $ref: '#/components/schemas/TradeStatus' }
+        role:
+          type: string
+          enum: [BUYER, SELLER]
+          nullable: true
+          description: Your side of this trade. Null for an admin viewing it.
+        xlmAmount: { $ref: '#/components/schemas/XlmAmount' }
+        ngnRate: { $ref: '#/components/schemas/NgnAmount' }
+        ngnAmount:
+          allOf: [{ $ref: '#/components/schemas/NgnAmount' }]
+          description: The authoritative total, computed server-side.
+        paymentMethod: { $ref: '#/components/schemas/PaymentMethod' }
+        paymentDeadline: { type: string, format: date-time }
+        paidAt: { type: string, format: date-time, nullable: true }
+        completedAt: { type: string, format: date-time, nullable: true }
+        cancelledAt: { type: string, format: date-time, nullable: true }
+        cancelReason:
+          type: string
+          enum: [BUYER_CANCELLED, PAYMENT_TIMEOUT, ESCROW_FAILED]
+          nullable: true
+        escrowPublicKey:
+          type: string
+          nullable: true
+          description: Written before the lock is submitted, so the funds are always traceable.
+        createdAt: { type: string, format: date-time }
+        buyer: { $ref: '#/components/schemas/PublicUser' }
+        seller: { $ref: '#/components/schemas/PublicUser' }
+
+    TradeDetails:
+      allOf:
+        - { $ref: '#/components/schemas/Trade' }
+        - type: object
+          properties:
+            actions:
+              type: array
+              description: What you may do right now.
+              items: { type: string, enum: [MARK_PAID, RELEASE, CANCEL] }
+            paymentAccount:
+              nullable: true
+              allOf: [{ $ref: '#/components/schemas/PaymentAccount' }]
+              description: Where the buyer sends the Naira. Present while payment is due.
+            secondsRemaining:
+              type: integer
+              description: Time left in the payment window; 0 once it is not running.
+            links:
+              type: object
+              description: stellar.expert links for each on-chain step, null until it happens.
+              properties:
+                escrow: { type: string, nullable: true }
+                release: { type: string, nullable: true }
+                refund: { type: string, nullable: true }
+
+    Message:
+      type: object
+      properties:
+        id: { type: string }
+        tradeId: { type: string }
+        senderId: { type: string, nullable: true, description: Null for system messages. }
+        content: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true, description: Payment proof. }
+        isSystem: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        sender:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            displayName: { type: string }
+
+    PaymentAccount:
+      type: object
+      properties:
+        id: { type: string }
+        method: { $ref: '#/components/schemas/PaymentMethod' }
+        bankName: { type: string, nullable: true, description: Required for BANK_TRANSFER. }
+        accountName: { type: string }
+        accountNumber: { type: string, pattern: '^\d{10}$' }
 
     PaymentMethod:
       type: string
