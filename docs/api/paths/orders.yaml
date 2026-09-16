@@ -1,0 +1,144 @@
+# Order book paths, referenced from ../openapi.yaml
+list:
+  get:
+    tags: [Orders]
+    summary: Browse the market
+    description: |
+      Public. Sell offers are returned cheapest first, buy offers highest bid first; expired offers
+      and offers from restricted traders are excluded.
+    security: []
+    parameters:
+      - name: type
+        in: query
+        description: SELL lists offers you can buy from. Defaults to SELL.
+        schema: { type: string, enum: [BUY, SELL], default: SELL }
+      - name: paymentMethod
+        in: query
+        schema: { $ref: '../openapi.yaml#/components/schemas/PaymentMethod' }
+      - name: minAmount
+        in: query
+        description: Hide offers smaller than this.
+        schema: { $ref: '../openapi.yaml#/components/schemas/XlmAmount' }
+      - { $ref: '../openapi.yaml#/components/parameters/Page' }
+      - { $ref: '../openapi.yaml#/components/parameters/PageSize' }
+    responses:
+      '200':
+        description: A page of offers
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items: { $ref: '../openapi.yaml#/components/schemas/Order' }
+                pagination: { $ref: '../openapi.yaml#/components/schemas/Pagination' }
+      '400': { $ref: '../openapi.yaml#/components/responses/ValidationError' }
+
+create:
+  post:
+    tags: [Orders]
+    summary: Post an offer
+    description: |
+      Requires a verified email and — unless `REQUIRE_KYC=false` — a verified identity. A sell order
+      also needs a payout account for every payment method offered, and enough spendable XLM to cover
+      the amount plus the 2 XLM escrow overhead, counting XLM already committed to other sell orders.
+      Offers expire after 30 minutes.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [type, xlmAmount, ngnRate, paymentMethods]
+            properties:
+              type: { type: string, enum: [BUY, SELL] }
+              xlmAmount: { $ref: '../openapi.yaml#/components/schemas/XlmAmount' }
+              ngnRate:
+                allOf: [{ $ref: '../openapi.yaml#/components/schemas/NgnAmount' }]
+                description: Naira per XLM.
+              paymentMethods:
+                type: array
+                minItems: 1
+                items: { $ref: '../openapi.yaml#/components/schemas/PaymentMethod' }
+              terms: { type: string, maxLength: 500 }
+    responses:
+      '201':
+        description: Offer is live
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Order' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+      '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+      '422':
+        description: |
+          Business rule refused it — `ORDER_SIZE_OUT_OF_RANGE`, `TOO_MANY_ORDERS`,
+          `PAYMENT_ACCOUNT_REQUIRED` or `INSUFFICIENT_BALANCE`.
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+
+mine:
+  get:
+    tags: [Orders]
+    summary: Your own offers, newest first
+    parameters:
+      - name: status
+        in: query
+        schema: { type: string, enum: [ACTIVE, FILLED, CANCELLED, EXPIRED] }
+      - { $ref: '../openapi.yaml#/components/parameters/Page' }
+      - { $ref: '../openapi.yaml#/components/parameters/PageSize' }
+    responses:
+      '200':
+        description: A page of your offers
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items: { $ref: '../openapi.yaml#/components/schemas/Order' }
+                pagination: { $ref: '../openapi.yaml#/components/schemas/Pagination' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+
+byId:
+  get:
+    tags: [Orders]
+    summary: One offer
+    security: []
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Id' }
+    responses:
+      '200':
+        description: The offer
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Order' }
+      '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
+
+cancel:
+  post:
+    tags: [Orders]
+    summary: Take your offer off the market
+    description: Only an ACTIVE offer that has not expired can be cancelled, and only by its owner.
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Id' }
+    responses:
+      '200':
+        description: Cancelled
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Order' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+      '403':
+        description: Not your offer
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
+      '409':
+        description: Already closed, or a trader took it first
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
