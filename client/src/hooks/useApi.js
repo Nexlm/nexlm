@@ -8,7 +8,10 @@ export function useApi(fetcher, deps = []) {
   const [state, setState] = useState({ data: null, error: null, loading: true });
   const fetcherRef = useRef(fetcher);
   const requestId = useRef(0);
-  fetcherRef.current = fetcher;
+
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+  });
 
   const reload = useCallback(async ({ silent = false } = {}) => {
     const id = ++requestId.current;
