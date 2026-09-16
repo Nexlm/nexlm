@@ -101,7 +101,9 @@ On Vercel the API runs serverless: Socket.io is replaced by client polling, and 
 | --- | --- |
 | `npm run dev:server` | API with auto-reload |
 | `npm run dev:client` | Web client |
-| `npm test` | Server and client unit tests |
+| `npm test` | Server and client test suites |
+| `npm run lint` | ESLint across both workspaces |
+| `npm run test:coverage -w server` | Server tests with a coverage report |
 | `npm run build` | Production build of the client |
 | `npm run db:migrate` | Apply Prisma migrations in development |
 | `npm run db:seed` | Create or promote an admin |
@@ -155,7 +157,7 @@ Realtime events: `order:created`, `order:removed`, `trade:created`, `trade:updat
 - **Client tests** render components, hooks and pages in jsdom with the API mocked.
 - **Smoke test** (`server/scripts/smoke-test.mjs`) runs a full lifecycle on Stellar testnet: registration, escrow lock, chat upload, release, cancel, timeout auto-refund and withdrawal.
 
-See [docs/testing.md](docs/testing.md) for conventions, and [docs/architecture.md](docs/architecture.md) for how the layers fit together.
+More: [architecture](docs/architecture.md) · [testing](docs/testing.md) · [onboarding](docs/onboarding.md) · [runbook](docs/runbook.md) · [API spec](docs/api/openapi.yaml)
 
 ## Roadmap
 
