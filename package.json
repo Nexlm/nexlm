@@ -2,7 +2,7 @@
   "name": "nexlm",
   "version": "0.1.0",
   "private": true,
-  "description": "Peer-to-peer XLM ↔ NGN exchange with on-chain Stellar escrow",
+  "description": "Peer-to-peer XLM \u2194 NGN exchange with on-chain Stellar escrow",
   "workspaces": [
     "server",
     "client"
@@ -12,6 +12,8 @@
     "dev:client": "npm run dev -w client",
     "build": "npm run build -w client",
     "test": "npm test --workspaces --if-present",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "db:migrate": "npm run db:migrate -w server",
     "db:seed": "npm run db:seed -w server"
   },
@@ -22,5 +24,12 @@
     "@prisma/engines@6.19.3": true,
     "esbuild@0.25.12": true,
     "prisma@6.19.3": true
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0"
   }
 }
