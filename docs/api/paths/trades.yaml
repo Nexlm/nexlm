@@ -1,0 +1,242 @@
+# Trade and chat paths, referenced from ../openapi.yaml
+list:
+  get:
+    tags: [Trades]
+    summary: Your trades, newest first
+    parameters:
+      - name: scope
+        in: query
+        schema: { type: string, enum: [active, completed, cancelled, all], default: all }
+      - { $ref: '../openapi.yaml#/components/parameters/Page' }
+      - { $ref: '../openapi.yaml#/components/parameters/PageSize' }
+    responses:
+      '200':
+        description: A page of trades, each labelled with your role
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items: { $ref: '../openapi.yaml#/components/schemas/Trade' }
+                pagination: { $ref: '../openapi.yaml#/components/schemas/Pagination' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+
+open:
+  post:
+    tags: [Trades]
+    summary: Take an offer and lock escrow
+    description: |
+      Claims the order atomically, creates the trade, then funds a fresh Stellar escrow account and
+      disables its key in one transaction. The 15-minute payment window starts when the funds land.
+
+      If Stellar rejects the lock the trade is cancelled and the offer goes back on the market. If
+      the outcome is unknown the trade stays in `PENDING_ESCROW` and reconciliation settles it from
+      what is on-chain — so a 5xx here never means the money is lost.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [orderId, paymentMethod]
+            properties:
+              orderId: { type: string }
+              paymentMethod: { $ref: '../openapi.yaml#/components/schemas/PaymentMethod' }
+    responses:
+      '201':
+        description: Trade opened, escrow locked
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/TradeDetails' }
+      '400':
+        description: Your own order, or a method the advertiser does not accept
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+      '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+      '404':
+        description: The offer is gone
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '409':
+        description: Another trader took the offer first
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '422':
+        description: '`TOO_MANY_TRADES`, `PAYMENT_ACCOUNT_REQUIRED`, `COUNTERPARTY_INACTIVE` or `INSUFFICIENT_BALANCE`'
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '502':
+        description: '`STELLAR_TX_FAILED` — Stellar rejected the escrow lock; nothing moved'
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+
+byId:
+  get:
+    tags: [Trades]
+    summary: The trade room
+    description: |
+      Includes your role, the actions you may take, the seller's payout details while payment is due,
+      the seconds left on the window and explorer links for every on-chain step. Opening an overdue
+      trade settles it first, so the state you see is never stale.
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Id' }
+    responses:
+      '200':
+        description: Trade details
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/TradeDetails' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+      '403':
+        description: You are not a party to this trade
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
+
+markPaid:
+  post:
+    tags: [Trades]
+    summary: Buyer confirms the Naira was sent
+    description: Allowed only while the trade is ESCROW_LOCKED and the payment window is still open.
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Id' }
+    responses:
+      '200':
+        description: Trade is now PAID
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/TradeDetails' }
+      '403':
+        description: Only the buyer can do this
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '409': { $ref: '../openapi.yaml#/components/responses/Conflict' }
+      '422':
+        description: '`PAYMENT_WINDOW_CLOSED`'
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+
+release:
+  post:
+    tags: [Trades]
+    summary: Seller releases the XLM
+    description: |
+      Pays the buyer from escrow, removes the platform signer and merges what is left back to the
+      seller. Final — Stellar transactions cannot be reversed. The seller may release before the buyer
+      marks payment.
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Id' }
+    responses:
+      '200':
+        description: Trade is now COMPLETED
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/TradeDetails' }
+      '403':
+        description: Only the seller can do this
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '409': { $ref: '../openapi.yaml#/components/responses/Conflict' }
+      '502':
+        description: Stellar rejected the release; the trade is put back as it was
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+
+cancel:
+  post:
+    tags: [Trades]
+    summary: Buyer cancels before paying
+    description: Refunds the escrow to the seller and puts the offer back on the market if it has not expired.
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Id' }
+    responses:
+      '200':
+        description: Trade is now CANCELLED
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/TradeDetails' }
+      '403':
+        description: Only the buyer can cancel, and not after marking payment
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '409': { $ref: '../openapi.yaml#/components/responses/Conflict' }
+
+messages:
+  get:
+    tags: [Trades]
+    summary: Read the trade chat
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Id' }
+    responses:
+      '200':
+        description: Messages oldest first, including system messages
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items: { $ref: '../openapi.yaml#/components/schemas/Message' }
+      '403':
+        description: You are not a party to this trade
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+  post:
+    tags: [Trades]
+    summary: Send a message or payment proof
+    description: |
+      Send `content`, an `image`, or both. Images are validated by magic bytes, capped at 5 MB, and
+      stored on Cloudinary when configured. Chat stays open for 24 hours after a trade closes.
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Id' }
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              content: { type: string, maxLength: 2000 }
+              image: { type: string, format: binary, description: JPEG, PNG or WebP. }
+        application/json:
+          schema:
+            type: object
+            properties:
+              content: { type: string, maxLength: 2000 }
+    responses:
+      '201':
+        description: Message posted
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Message' }
+      '400':
+        description: Empty message, or a file that is not a real image
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '409':
+        description: Chat for this trade is closed
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '503':
+        description: '`UPLOADS_NOT_CONFIGURED` — serverless deployment without Cloudinary'
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
