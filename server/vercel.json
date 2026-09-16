@@ -2,9 +2,22 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "buildCommand": "npm run vercel-build",
-  "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api"
+    }
+  ],
   "functions": {
-    "api/index.js": { "maxDuration": 30 }
+    "api/index.js": {
+      "maxDuration": 30
+    }
   },
-  "crons": [{ "path": "/api/cron/tick", "schedule": "0 5 * * *" }]
+  "crons": [
+    {
+      "path": "/api/cron/tick",
+      "schedule": "0 5 * * *"
+    }
+  ],
+  "ignoreCommand": "exit 1"
 }
