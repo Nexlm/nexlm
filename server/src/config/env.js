@@ -45,12 +45,17 @@ const schema = z.object({
   CRON_SECRET: z.string().min(16).optional(),
 });
 
-// Treat empty strings in .env as "unset" so optional values fall back to defaults.
-const raw = Object.fromEntries(
-  Object.entries(process.env).filter(([, value]) => value !== ''),
-);
+/**
+ * Validates a set of environment variables. Empty strings are treated as
+ * "unset" so blank lines in a .env file fall back to the defaults.
+ * Exported so the rules can be tested without reloading the module.
+ */
+export function parseEnv(source = process.env) {
+  const raw = Object.fromEntries(Object.entries(source).filter(([, value]) => value !== ''));
+  return schema.safeParse(raw);
+}
 
-const parsed = schema.safeParse(raw);
+const parsed = parseEnv();
 const serverless = Boolean(process.env.VERCEL);
 
 /**
