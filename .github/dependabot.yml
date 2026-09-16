@@ -1,0 +1,29 @@
+version: 2
+updates:
+  # Security-sensitive dependencies: the Stellar SDK, Prisma, auth and crypto libraries.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+      production-patches:
+        dependency-type: production
+        update-types: [patch]
+    ignore:
+      # Majors for these change money-moving behaviour — upgrade them deliberately.
+      - dependency-name: "@stellar/stellar-sdk"
+        update-types: [version-update:semver-major]
+      - dependency-name: "@prisma/client"
+        update-types: [version-update:semver-major]
+      - dependency-name: prisma
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
