@@ -134,6 +134,29 @@ paths:
   /api/trades/{id}/messages:
     $ref: './paths/trades.yaml#/messages'
 
+  /api/wallet:
+    $ref: './paths/wallet.yaml#/summary'
+  /api/wallet/deposit:
+    $ref: './paths/wallet.yaml#/deposit'
+  /api/wallet/activity:
+    $ref: './paths/wallet.yaml#/activity'
+  /api/wallet/transactions:
+    $ref: './paths/wallet.yaml#/transactions'
+  /api/wallet/withdraw:
+    $ref: './paths/wallet.yaml#/withdraw'
+
+  /api/users/me:
+    $ref: './paths/users.yaml#/me'
+  /api/users/me/payment-accounts:
+    $ref: './paths/users.yaml#/paymentAccounts'
+  /api/users/me/payment-accounts/{id}:
+    $ref: './paths/users.yaml#/paymentAccountById'
+  /api/users/{displayName}:
+    $ref: './paths/users.yaml#/publicProfile'
+
+  /api/kyc:
+    $ref: './paths/users.yaml#/kyc'
+
 components:
   securitySchemes:
     bearerAuth:
