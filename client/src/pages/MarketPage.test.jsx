@@ -30,7 +30,7 @@ const page = (items, pagination = {}) => ({
   pagination: { page: 1, pageSize: 20, total: items.length, totalPages: 1, hasMore: false, ...pagination },
 });
 
-const renderMarket = () => render(<MemoryRouter><MarketPage /></MemoryRouter>);
+const renderMarket = (entry = '/') => render(<MemoryRouter initialEntries={[entry]}><MarketPage /></MemoryRouter>);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -60,6 +60,14 @@ describe('MarketPage', () => {
       expect(api.get).toHaveBeenLastCalledWith('/orders', expect.objectContaining({ type: 'BUY', page: 1 })),
     );
     expect(screen.getByText('Best bid')).toBeInTheDocument();
+  });
+
+  it('starts from the filters in the URL, so a market link can be shared', async () => {
+    renderMarket('/?side=sell&method=KUDA&page=2');
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith('/orders', expect.objectContaining({ type: 'BUY', paymentMethod: 'KUDA', page: 2 })),
+    );
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Sell XLM');
   });
 
   it('filters by payment method', async () => {
