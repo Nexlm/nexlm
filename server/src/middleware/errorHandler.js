@@ -34,10 +34,10 @@ export function errorHandler(err, req, res, _next) {
   }
 
   if (err instanceof AppError) {
-    if (err.status >= 500) logger.warn(err.message, { code: err.code, details: err.details, path: req.path });
+    if (err.status >= 500) logger.warn(err.message, { code: err.code, details: err.details, path: req.path, requestId: req.id });
     return send(res, err.status, err.code, err.message, err.details);
   }
 
-  logger.error('Unhandled error', { err, method: req.method, path: req.path });
+  logger.error('Unhandled error', { err, method: req.method, path: req.path, requestId: req.id });
   return send(res, 500, 'INTERNAL_ERROR', 'Something went wrong on our side. Please try again.');
 }
