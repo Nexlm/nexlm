@@ -1,0 +1,192 @@
+# Profile, payout account and KYC paths, referenced from ../openapi.yaml
+me:
+  get:
+    tags: [Users]
+    summary: Your profile with reputation
+    responses:
+      '200':
+        description: The signed-in user
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user: { $ref: '../openapi.yaml#/components/schemas/User' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+  patch:
+    tags: [Users]
+    summary: Update your profile
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              phone:
+                type: string
+                description: Nigerian number in any common format; stored as +234…
+                examples: ['0803 123 4567', '+2348031234567']
+    responses:
+      '200':
+        description: Updated
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user: { $ref: '../openapi.yaml#/components/schemas/User' }
+      '400': { $ref: '../openapi.yaml#/components/responses/ValidationError' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+
+paymentAccounts:
+  get:
+    tags: [Users]
+    summary: Your payout accounts
+    responses:
+      '200':
+        description: Saved accounts, oldest first
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items: { $ref: '../openapi.yaml#/components/schemas/PaymentAccount' }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+  post:
+    tags: [Users]
+    summary: Save a payout account
+    description: Where buyers send Naira when you sell. Up to 10 accounts; a bank transfer needs a bank name.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [method, accountName, accountNumber]
+            properties:
+              method: { $ref: '../openapi.yaml#/components/schemas/PaymentMethod' }
+              bankName: { type: string, minLength: 2, maxLength: 60 }
+              accountName: { type: string, minLength: 2, maxLength: 80 }
+              accountNumber: { type: string, pattern: '^\d{10}$' }
+    responses:
+      '201':
+        description: Saved
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/PaymentAccount' }
+      '400': { $ref: '../openapi.yaml#/components/responses/ValidationError' }
+      '409':
+        description: You already saved this account
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '422':
+        description: '`TOO_MANY_ACCOUNTS`'
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+
+paymentAccountById:
+  delete:
+    tags: [Users]
+    summary: Remove a payout account
+    parameters:
+      - { $ref: '../openapi.yaml#/components/parameters/Id' }
+    responses:
+      '204': { description: Removed }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+      '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
+
+publicProfile:
+  get:
+    tags: [Users]
+    summary: A trader's public profile
+    description: Reputation and current offers. Banned accounts are hidden. Matching is case-insensitive.
+    security: []
+    parameters:
+      - name: displayName
+        in: path
+        required: true
+        schema: { type: string, minLength: 3, maxLength: 24 }
+    responses:
+      '200':
+        description: The trader
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: '../openapi.yaml#/components/schemas/PublicUser' }
+                - type: object
+                  properties:
+                    activeOrders:
+                      type: array
+                      items: { $ref: '../openapi.yaml#/components/schemas/Order' }
+      '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
+
+kyc:
+  get:
+    tags: [KYC]
+    summary: Your verification state
+    responses:
+      '200':
+        description: Status, without the ID number
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kycStatus: { type: string, enum: [UNVERIFIED, PENDING, VERIFIED, REJECTED] }
+                kycIdType: { type: string, enum: [BVN, NIN], nullable: true }
+                kycIdLast4: { type: string, nullable: true }
+                kycFullName: { type: string, nullable: true }
+                kycSubmittedAt: { type: string, format: date-time, nullable: true }
+                kycReviewedAt: { type: string, format: date-time, nullable: true }
+      '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+  post:
+    tags: [KYC]
+    summary: Submit a BVN or NIN for verification
+    description: |
+      Checked against NIBSS (BVN) or NIMC (NIN) through Smile ID when credentials are configured,
+      otherwise queued for manual review. Only a keyed fingerprint and the last four digits are
+      stored — the full number never is. One ID cannot be linked to two accounts.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [idType, idNumber, firstName, lastName, dateOfBirth]
+            properties:
+              idType: { type: string, enum: [BVN, NIN] }
+              idNumber: { type: string, pattern: '^\d{11}$' }
+              firstName: { type: string, minLength: 2, maxLength: 50 }
+              lastName: { type: string, minLength: 2, maxLength: 50 }
+              dateOfBirth:
+                type: string
+                format: date
+                description: YYYY-MM-DD. Traders must be at least 18.
+    responses:
+      '201':
+        description: Decision, or queued for review
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [VERIFIED, PENDING, REJECTED] }
+                message: { type: string }
+      '400': { $ref: '../openapi.yaml#/components/responses/ValidationError' }
+      '409':
+        description: Already verified, already under review, or the ID belongs to another account
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
+      '429': { $ref: '../openapi.yaml#/components/responses/RateLimited' }
+      '503':
+        description: '`KYC_PROVIDER_ERROR` — the provider is unavailable; nothing was recorded'
+        content:
+          application/json:
+            schema: { $ref: '../openapi.yaml#/components/schemas/Error' }
