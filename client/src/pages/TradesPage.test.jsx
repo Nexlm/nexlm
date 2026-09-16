@@ -32,7 +32,7 @@ const page = (items, pagination = {}) => ({
   pagination: { page: 1, pageSize: 20, total: items.length, totalPages: 1, hasMore: false, ...pagination },
 });
 
-const renderPage = () => render(<MemoryRouter><TradesPage /></MemoryRouter>);
+const renderPage = (entry = '/trades') => render(<MemoryRouter initialEntries={[entry]}><TradesPage /></MemoryRouter>);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -74,6 +74,16 @@ describe('TradesPage', () => {
 
     await userEvent.click(screen.getByRole('tab', { name: 'Completed' }));
     await waitFor(() => expect(api.get).toHaveBeenLastCalledWith('/trades', { scope: 'completed', page: 1 }));
+  });
+
+  it('starts from the scope in the URL', async () => {
+    renderPage('/trades?scope=completed&page=2');
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/trades', { scope: 'completed', page: 2 }));
+  });
+
+  it('ignores a scope it does not recognise', async () => {
+    renderPage('/trades?scope=disputed');
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/trades', { scope: 'active', page: 1 }));
   });
 
   it('points first-time traders at the market', async () => {
