@@ -1,0 +1,57 @@
+name: Bug report
+description: Something in the app or API behaves incorrectly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never include secrets in an issue — no JWTs, `.env` values, Stellar seeds, BVN/NIN numbers or bank details.
+        For anything security-sensitive, follow [SECURITY.md](../../SECURITY.md) instead.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you see, and what did you expect instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Web client
+        - API
+        - Escrow / Stellar
+        - Trade chat
+        - Wallet
+        - KYC
+        - Admin
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: trade-or-order
+    attributes:
+      label: Trade or order id (optional)
+      description: Helps trace the transaction. Ids are safe to share; wallet seeds are not.
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error output (optional)
+      description: Server log lines or the browser console, with any tokens removed.
+      render: shell
