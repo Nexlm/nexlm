@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, api, request, setAuthHandlers } from './api.js';
 
-const jsonResponse = (status, body) => ({
+const jsonResponse = (status, body, headers = {}) => ({
   ok: status < 400,
   status,
+  headers: { get: (name) => headers[name] ?? null },
   json: async () => body,
 });
 
@@ -74,6 +75,11 @@ describe('error handling', () => {
       message: 'Order already taken',
       details: { id: 'o1' },
     });
+  });
+
+  it('carries the request id so a report can quote it', async () => {
+    stubFetch(jsonResponse(500, { error: { code: 'INTERNAL_ERROR', message: 'Something went wrong' } }, { 'X-Request-Id': 'edge-7f3a91c4' }));
+    await expect(request('/orders')).rejects.toMatchObject({ requestId: 'edge-7f3a91c4' });
   });
 
   it('falls back to a generic message when the body has no error', async () => {

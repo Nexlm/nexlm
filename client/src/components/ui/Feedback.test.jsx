@@ -63,6 +63,16 @@ describe('ErrorState', () => {
     expect(screen.getByText('Could not reach Nexlm')).toBeInTheDocument();
   });
 
+  it('shows the request id when the API returned one', () => {
+    render(<ErrorState error={{ message: 'Something went wrong', requestId: 'edge-7f3a91c4' }} />);
+    expect(screen.getByText('Reference edge-7f3a91c4')).toBeInTheDocument();
+  });
+
+  it('shows no reference line for client-side errors', () => {
+    render(<ErrorState error={new Error('Could not reach Nexlm')} />);
+    expect(screen.queryByText(/^Reference /)).not.toBeInTheDocument();
+  });
+
   it('falls back when the error has no message', () => {
     render(<ErrorState error={undefined} />);
     expect(screen.getByText('Something went wrong.')).toBeInTheDocument();
