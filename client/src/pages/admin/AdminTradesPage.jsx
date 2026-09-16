@@ -9,10 +9,12 @@ import { useLiveRefresh, useSocketEvent } from '../../hooks/useSocket.js';
 import { api } from '../../lib/api.js';
 import { paymentMethodLabel, TRADE_STATUS } from '../../lib/constants.js';
 import { formatNgn, formatXlm, timeAgo } from '../../lib/format.js';
+import { usePageTitle } from '../../hooks/usePageTitle.js';
 
 const STATUS_OPTIONS = [{ value: '', label: 'All statuses' }, ...Object.entries(TRADE_STATUS).map(([value, meta]) => ({ value, label: meta.label }))];
 
 export default function AdminTradesPage() {
+  usePageTitle('Admin · trades');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const { data, loading, error, reload } = useApi(() => api.get('/admin/trades', { status, page }), [status, page]);

@@ -10,10 +10,12 @@ import { useDebounce } from '../../hooks/useDebounce.js';
 import { api } from '../../lib/api.js';
 import { KYC_STATUS, USER_STATUS } from '../../lib/constants.js';
 import { formatDateTime } from '../../lib/format.js';
+import { usePageTitle } from '../../hooks/usePageTitle.js';
 
 const toOptions = (map, allLabel) => [{ value: '', label: allLabel }, ...Object.entries(map).map(([value, meta]) => ({ value, label: meta.label }))];
 
 export default function AdminUsersPage() {
+  usePageTitle('Admin · users');
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState(params.get('q') ?? '');
   const debouncedQ = useDebounce(q);

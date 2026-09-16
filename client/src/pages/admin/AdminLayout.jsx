@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { NavLink, Outlet } from 'react-router-dom';
+import { usePageTitle } from '../../hooks/usePageTitle.js';
 
 const LINKS = [
   { to: '/admin', label: 'Overview', end: true },
@@ -8,6 +9,7 @@ const LINKS = [
 ];
 
 export default function AdminLayout() {
+  usePageTitle('Admin');
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 border-b border-line sm:flex-row sm:items-end sm:justify-between">

@@ -4,6 +4,7 @@ import { ErrorState, PageLoader } from '../../components/ui/Feedback.jsx';
 import { useApi } from '../../hooks/useApi.js';
 import { api } from '../../lib/api.js';
 import { formatNgn, formatPercent, formatXlm } from '../../lib/format.js';
+import { usePageTitle } from '../../hooks/usePageTitle.js';
 
 function Stat({ value, label, sub, to, accent }) {
   const body = (
@@ -27,6 +28,7 @@ function Stat({ value, label, sub, to, accent }) {
 }
 
 export default function AdminOverviewPage() {
+  usePageTitle('Admin · overview');
   const { data, loading, error, reload } = useApi(() => api.get('/admin/overview'), []);
 
   if (loading && !data) return <PageLoader />;
