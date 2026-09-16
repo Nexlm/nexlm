@@ -15,6 +15,7 @@ import { api } from '../lib/api.js';
 import { PAYMENT_METHODS } from '../lib/constants.js';
 import { formatNgn } from '../lib/format.js';
 import { useAuthStore } from '../store/authStore.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 const SIDE_TABS = [
   { value: 'buy', label: 'Buy XLM', activeClass: 'bg-leaf text-ink' },
@@ -32,6 +33,8 @@ export default function MarketPage() {
 
   // Buyers browse sell orders; sellers browse buy orders.
   const type = side === 'buy' ? 'SELL' : 'BUY';
+
+  usePageTitle(side === 'buy' ? 'Buy XLM' : 'Sell XLM');
 
   const { data, loading, error, reload } = useApi(
     () =>

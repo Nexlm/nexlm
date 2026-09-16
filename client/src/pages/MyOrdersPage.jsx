@@ -12,6 +12,7 @@ import { api } from '../lib/api.js';
 import { ORDER_STATUS } from '../lib/constants.js';
 import { formatDateTime, formatNgn, formatXlm } from '../lib/format.js';
 import { toast } from '../store/toastStore.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 const STATUS_TABS = [
   { value: '', label: 'All' },
@@ -22,6 +23,7 @@ const STATUS_TABS = [
 ];
 
 export default function MyOrdersPage() {
+  usePageTitle('My orders');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [cancelling, setCancelling] = useState(null);

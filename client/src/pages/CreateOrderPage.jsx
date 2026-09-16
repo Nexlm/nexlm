@@ -11,10 +11,12 @@ import { PAYMENT_METHODS } from '../lib/constants.js';
 import { fieldErrors } from '../lib/forms.js';
 import { estimateNgn, formatNgn, formatXlm } from '../lib/format.js';
 import { toast } from '../store/toastStore.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 const ESCROW_OVERHEAD = 2;
 
 export default function CreateOrderPage() {
+  usePageTitle('Post an order');
   const navigate = useNavigate();
   const [type, setType] = useState('SELL');
   const [form, setForm] = useState({ xlmAmount: '', ngnRate: '', paymentMethods: [], terms: '' });

@@ -11,6 +11,7 @@ import { useLiveRefresh, useSocketEvent } from '../hooks/useSocket.js';
 import { api } from '../lib/api.js';
 import { paymentMethodLabel, TRADE_STATUS } from '../lib/constants.js';
 import { formatNgn, formatXlm, timeAgo } from '../lib/format.js';
+import { usePageTitle } from '../hooks/usePageTitle.js';
 
 const SCOPES = [
   { value: 'active', label: 'In progress' },
@@ -20,6 +21,7 @@ const SCOPES = [
 ];
 
 export default function TradesPage() {
+  usePageTitle('My trades');
   const [scope, setScope] = useState('active');
   const [page, setPage] = useState(1);
   const { data, loading, error, reload } = useApi(() => api.get('/trades', { scope, page }), [scope, page]);
