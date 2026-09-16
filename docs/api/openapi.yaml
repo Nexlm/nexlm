@@ -60,7 +60,9 @@ paths:
                   status: { type: string, examples: [ok] }
                   network: { type: string, enum: [testnet, public] }
                   runtime: { type: string, enum: [server, serverless] }
-                  realtime: { type: boolean, description: False when sockets are unavailable and the client must poll. }
+                  realtime:
+                    type: boolean
+                    description: False when sockets are unavailable and the client must poll.
                   database: { type: string, enum: [ok, unreachable, 'migrations missing'] }
         '503':
           description: Degraded — the API is up but the database is not usable.
@@ -69,7 +71,7 @@ paths:
     get:
       tags: [Health]
       summary: Run due background jobs (serverless deployments)
-      description: Called by Vercel Cron. Requires `Authorization: Bearer $CRON_SECRET`.
+      description: 'Called by Vercel Cron. Requires the header `Authorization: Bearer $CRON_SECRET`.'
       responses:
         '200':
           description: Jobs ran
@@ -87,13 +89,30 @@ paths:
                       reconciledTrades: { type: integer }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /api/auth/register:
+    $ref: './paths/auth.yaml#/register'
+  /api/auth/login:
+    $ref: './paths/auth.yaml#/login'
+  /api/auth/me:
+    $ref: './paths/auth.yaml#/me'
+  /api/auth/verify-email:
+    $ref: './paths/auth.yaml#/verifyEmail'
+  /api/auth/resend-verification:
+    $ref: './paths/auth.yaml#/resendVerification'
+  /api/auth/forgot-password:
+    $ref: './paths/auth.yaml#/forgotPassword'
+  /api/auth/reset-password:
+    $ref: './paths/auth.yaml#/resetPassword'
+  /api/auth/change-password:
+    $ref: './paths/auth.yaml#/changePassword'
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Issued by `/api/auth/login` and `/api/auth/register`. Send as `Authorization: Bearer <token>`.
+      description: 'Issued by /api/auth/login and /api/auth/register. Send as `Authorization: Bearer <token>`.'
 
   responses:
     Unauthorized:
@@ -116,6 +135,11 @@ components:
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
+    RateLimited:
+      description: Too many requests — `RATE_LIMITED`
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
     Conflict:
       description: The resource changed under you — refresh and retry
       content:
@@ -134,7 +158,9 @@ components:
             code:
               type: string
               examples: [VALIDATION_ERROR, UNAUTHORIZED, KYC_REQUIRED, INSUFFICIENT_BALANCE, CONFLICT, STELLAR_TX_FAILED]
-            message: { type: string, description: Safe to show a trader. }
+            message:
+              type: string
+              description: Safe to show a trader.
             details:
               description: Field errors for validation failures, or context for a business rule.
               oneOf:
@@ -145,6 +171,54 @@ components:
                       path: { type: string }
                       message: { type: string }
                 - type: object
+
+    Session:
+      type: object
+      properties:
+        user: { $ref: '#/components/schemas/User' }
+        token:
+          type: string
+          description: JWT session token, valid for 7 days by default.
+
+    User:
+      type: object
+      description: Never includes the password hash or the wallet seed.
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        displayName: { type: string }
+        phone: { type: string, nullable: true }
+        role: { type: string, enum: [USER, ADMIN] }
+        status: { type: string, enum: [ACTIVE, SUSPENDED, BANNED] }
+        emailVerified: { type: boolean }
+        kycStatus: { type: string, enum: [UNVERIFIED, PENDING, VERIFIED, REJECTED] }
+        kycIdType: { type: string, enum: [BVN, NIN], nullable: true }
+        kycIdLast4:
+          type: string
+          nullable: true
+          description: Last four digits only — the full BVN/NIN is never stored.
+        stellarPublicKey: { type: string, pattern: '^G[A-Z2-7]{55}$' }
+        createdAt: { type: string, format: date-time }
+        stats: { $ref: '#/components/schemas/TraderStats' }
+
+    PublicUser:
+      type: object
+      description: What other traders see.
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+        kycStatus: { type: string, enum: [UNVERIFIED, PENDING, VERIFIED, REJECTED] }
+        createdAt: { type: string, format: date-time }
+        stats: { $ref: '#/components/schemas/TraderStats' }
+
+    TraderStats:
+      type: object
+      properties:
+        completedTrades: { type: integer }
+        completionRate:
+          type: number
+          nullable: true
+          description: Percentage with one decimal, or null for a trader with no closed trades.
 
     Pagination:
       type: object
