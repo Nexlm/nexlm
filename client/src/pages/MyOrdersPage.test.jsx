@@ -25,7 +25,7 @@ const page = (items) => ({
   pagination: { page: 1, pageSize: 20, total: items.length, totalPages: 1, hasMore: false },
 });
 
-const renderPage = () => render(<MemoryRouter><MyOrdersPage /></MemoryRouter>);
+const renderPage = (entry = '/orders') => render(<MemoryRouter initialEntries={[entry]}><MyOrdersPage /></MemoryRouter>);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -55,6 +55,16 @@ describe('MyOrdersPage', () => {
 
     await userEvent.click(screen.getByRole('tab', { name: 'Expired' }));
     await waitFor(() => expect(api.get).toHaveBeenLastCalledWith('/orders/mine', { status: 'EXPIRED', page: 1 }));
+  });
+
+  it('starts from the status in the URL', async () => {
+    renderPage('/orders?status=CANCELLED&page=3');
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/orders/mine', { status: 'CANCELLED', page: 3 }));
+  });
+
+  it('ignores a status it does not recognise', async () => {
+    renderPage('/orders?status=DELETED');
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/orders/mine', { status: '', page: 1 }));
   });
 
   it('cancels an active order and refreshes', async () => {
