@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Nexlm/nexlm/security/advisories/new
+    about: Report privately. Never open a public issue for a security problem.
+  - name: Documentation
+    url: https://github.com/Nexlm/nexlm-docs
+    about: Guides for traders and developers, including the escrow model and API reference.
+  - name: Trading question
+    url: https://github.com/Nexlm/nexlm/discussions
+    about: Ask how something works before filing a bug.
