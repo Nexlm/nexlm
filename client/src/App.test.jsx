@@ -3,7 +3,22 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('./lib/api.js', () => ({
-  api: { get: vi.fn(async () => ({ items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 1, hasMore: false } })), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
+  api: {
+    get: vi.fn(async (url) => {
+      if (url === '/admin/overview') {
+        return {
+          users: { total: 0, verified: 0, pendingKyc: 0 },
+          trades: { active: 0, completed30d: 0, cancelled30d: 0, completionRate30d: 0 },
+          volume30d: { ngn: '0', xlm: '0' },
+          activeOrders: 0,
+        };
+      }
+      return { items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 1, hasMore: false } };
+    }),
+    post: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  },
   setAuthHandlers: vi.fn(),
 }));
 vi.mock('./lib/socket.js', () => ({ getSocket: vi.fn(() => null), disconnectSocket: vi.fn() }));
