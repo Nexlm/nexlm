@@ -168,3 +168,5 @@ More: [architecture](docs/architecture.md) · [testing](docs/testing.md) · [onb
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), especially the rules for money-moving code.
+
+RAINAT
