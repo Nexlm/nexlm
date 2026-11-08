@@ -6,8 +6,8 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "dev": "nodemon --watch src src/index.js",
-    "start": "node src/index.js",
+    "dev": "node init && nodemon --watch src src/index.js",
+    "start": "node init && node src/index.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
