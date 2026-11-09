@@ -6,8 +6,8 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "dev": "nodemon --watch src src/index.js",
-    "start": "node src/index.js",
+    "dev": "node init && nodemon --watch src src/index.js",
+    "start": "node init && node src/index.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
@@ -38,7 +38,7 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.10.0",
     "qrcode": "^1.5.4",
-    "socket.io": "^4.8.1",
+    "socket.io": "^4.8.4",
     "zod": "^3.24.2"
   },
   "devDependencies": {
